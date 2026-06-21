@@ -50,7 +50,7 @@ async def analyze_images(
             prompt = f"""
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
             写真の中に「表」や「グラフ」が含まれている場合は、HTMLの <table> タグを使用して見やすい表形式で解説に組み込んでください。
-            【重要】JSONエラーを防ぐため、HTMLタグの属性値には必ずシングルクォーテーションを使用してください（例: <table class='w-full'>）。
+            【重要】文字数制限を回避するため、table, tr, th, tdタグには class や style などの装飾属性を一切付けず、最もシンプルなタグのみを使用してください。
             正解と、詳細な理由・解説を含めてください。
             以下のJSON形式で出力してください。
             {{
@@ -69,12 +69,13 @@ async def analyze_images(
             prompt = f"""
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
             2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。
-               【重要】JSONエラーを防ぐため、HTMLタグの属性値には必ずシングルクォーテーションを使用してください。
+               【最重要】文字数オーバーによるJSONエラーを確実に防ぐため、HTMLタグには class や style などの装飾属性を一切付けないでください。最もシンプルな <table><thead><tr><th>...</th></tr></thead><tbody><tr><td>...</td></tr></tbody></table> のみを使用してください。デザインは別の場所で自動付与されます。
+               ※グラフの場合は、目盛りから読み取れる数値を推測し、シンプルな表形式に変換して出力してください。
             3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。
             以下のJSON形式で出力してください。
             {{
                 "type": "textbook",
-                "extracted_text": "抽出テキストと生成されたHTMLテーブル",
+                "extracted_text": "抽出テキストと生成されたシンプルなHTMLテーブル",
                 "generated_questions": [
                     {{
                         "question_text": "作成した問題文",
@@ -95,7 +96,6 @@ async def analyze_images(
                 response_mime_type="application/json",
                 temperature=0.2,
                 max_output_tokens=8192,
-                # 【修正】安全フィルターを完全に無効化（BLOCK_NONE）し、医療・介護用語での強制停止を完全に防ぐ
                 safety_settings=[
                     types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=types.HarmBlockThreshold.BLOCK_NONE),
                     types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
@@ -115,7 +115,6 @@ async def analyze_images(
             parsed_data = json.loads(raw_text, strict=False)
             return JSONResponse(content=parsed_data)
         except json.JSONDecodeError:
-            # 【修正】万が一途切れた場合でも、アプリがクラッシュしないように専用のエラーメッセージを返す
             return JSONResponse(content={"error": "AIが表や文章を生成する途中で文字数制限に達して切れてしまいました。写真に写る範囲（表や文字）を少し減らして、分けて読み込ませてみてください。"}, status_code=500)
 
     except Exception as e:
