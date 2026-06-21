@@ -49,36 +49,41 @@ async def analyze_images(
         if mode == "workbook":
             prompt = f"""
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
-            写真の中に「図、表、グラフ」が含まれている場合は、その内容もテキストとして詳しく説明し、問題を解くための手がかりとして含めてください。
-            正解と、詳細な理由・解説（根拠となる法律や算定要件など）を含めてください。
+            写真の中に「表」や「グラフ」が含まれている場合は、HTMLの <table> タグを使用して見やすい表形式で解説に組み込んでください。
+            正解と、詳細な理由・解説を含めてください。
             以下のJSON形式で出力してください。
             {{
                 "type": "workbook",
                 "questions": [
                     {{
-                        "question_text": "問題文（図表の説明含む）",
+                        "question_text": "問題文",
                         "options": ["選択肢1", "選択肢2", "選択肢3", "選択肢4"],
                         "answer": "正解の選択肢",
-                        "explanation": "なぜこの答えになるのかの詳しい理由と解説"
+                        "explanation": "解説（必要に応じて<table>タグを使用）"
                     }}
                 ]
             }}
             """
         else:
+            # 【変更】表やグラフをHTMLのテーブルとして出力するように詳細な指示を追加しました
             prompt = f"""
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
-            2. 写真の中に「図、表、グラフ」が含まれている場合は無視せず、その図解が何を表しているのか詳細にテキスト化（可能ならMarkdownの表形式で）して抽出テキストに含めてください。
-            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。正解と詳細な解説を含めてください。
+            2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。
+               ※デザイン指定として、必ず以下のTailwindクラスをテーブルに付与してください。
+               <table class="w-full text-sm text-left border-collapse border border-gray-300 my-4 shadow-sm">
+                 <thead class="bg-blue-100 font-bold text-gray-700">
+               ※グラフの場合は、目盛りから読み取れる数値を推測し、表形式（年表や推移表など）に変換して出力してください。
+            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。
             以下のJSON形式で出力してください。
             {{
                 "type": "textbook",
-                "extracted_text": "抽出されたテキストと図表の解説（<mark class='ai-mark'>重要語句</mark>）",
+                "extracted_text": "抽出テキストと生成されたHTMLテーブル（<mark class='ai-mark'>重要語句</mark>含む）",
                 "generated_questions": [
                     {{
                         "question_text": "作成した問題文",
                         "options": ["選択肢1", "選択肢2", "選択肢3"],
                         "answer": "正解",
-                        "explanation": "なぜこの答えになるのかの詳しい理由と解説"
+                        "explanation": "解説"
                     }}
                 ]
             }}
@@ -92,22 +97,34 @@ async def analyze_images(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 temperature=0.2,
+                max_output_tokens=8192,
+                safety_settings=[
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                        threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                    ),
+                ]
             )
         )
         
-        # --- ここから強力なエラー処理に変更 ---
         raw_text = response.text
-        
-        # もしAIの返答が空（None）だった場合は、クラッシュさせずに画面にエラー理由を返す
         if raw_text is None:
-            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。画像が読み取れなかったか、テキスト内の言葉がAIの安全フィルターに誤検知された可能性があります。別の写真で試してみてください。"}, status_code=500)
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。画像が読み取れなかった可能性があります。"}, status_code=500)
 
-        # JSONモードでも不要なマークダウン記号が混ざることがあるため、念のため除去
         raw_text = raw_text.replace('```json', '').replace('```', '').strip()
-        
-        # strict=False で読み込み
         return JSONResponse(content=json.loads(raw_text, strict=False))
-        # --- ここまで ---
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
