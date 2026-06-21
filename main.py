@@ -1,5 +1,6 @@
 import os
 import json
+from typing import List
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -31,25 +32,33 @@ client = genai.Client(api_key=API_KEY)
 async def serve_frontend():
     return FileResponse("index.html")
 
+# 【変更】file -> files にし、List[UploadFile] で複数画像を受け取るようにしました
 @app.post("/api/analyze")
-async def analyze_image(
-    file: UploadFile = File(...),
+async def analyze_images(
+    files: List[UploadFile] = File(...),
     mode: str = Form(...)
 ):
     try:
-        image_data = await file.read()
+        # 複数画像のデータをAIに渡せる形式に変換
+        image_parts = []
+        for file in files:
+            data = await file.read()
+            image_parts.append(
+                types.Part.from_bytes(data=data, mime_type=file.content_type)
+            )
         
-        # プロンプト（指示）もAIが処理しやすいように短く・明確に最適化しました
+        # 【変更】プロンプトに「図面や表の解析」の指示を追加しました
         if mode == "workbook":
             prompt = """
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
+            写真の中に「図、表、グラフ」が含まれている場合は、その内容もテキストとして詳しく説明し、問題を解くための手がかりとして含めてください。
             正解と、詳細な理由・解説（根拠となる法律や算定要件など）を含めてください。
             以下のJSON形式で出力してください。
             {
                 "type": "workbook",
                 "questions": [
                     {
-                        "question_text": "問題文",
+                        "question_text": "問題文（図表の説明含む）",
                         "options": ["選択肢1", "選択肢2", "選択肢3", "選択肢4"],
                         "answer": "正解の選択肢",
                         "explanation": "なぜこの答えになるのかの詳しい理由と解説"
@@ -60,11 +69,12 @@ async def analyze_image(
         else:
             prompt = """
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
-            2. その内容から、確認のためのオリジナル問題を3問作成してください。正解と詳細な解説を含めてください。
+            2. 写真の中に「図、表、グラフ」が含まれている場合は無視せず、その図解が何を表しているのか詳細にテキスト化（可能ならMarkdownの表形式で）して抽出テキストに含めてください。
+            3. その内容から、確認のためのオリジナル問題を3問作成してください。正解と詳細な解説を含めてください。
             以下のJSON形式で出力してください。
             {
                 "type": "textbook",
-                "extracted_text": "抽出されたテキスト（<mark class='ai-mark'>重要語句</mark>）",
+                "extracted_text": "抽出されたテキストと図表の解説（<mark class='ai-mark'>重要語句</mark>）",
                 "generated_questions": [
                     {
                         "question_text": "作成した問題文",
@@ -76,23 +86,17 @@ async def analyze_image(
             }
             """
 
-        # 【重要】AIを「高速・高精度モード」に設定
+        contents = [prompt] + image_parts
+
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=[
-                prompt,
-                types.Part.from_bytes(
-                    data=image_data,
-                    mime_type=file.content_type,
-                )
-            ],
+            contents=contents,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json", # AIにJSON形式での出力を強制（超高速化）
-                temperature=0.2, # ランダム性を下げて、教科書に忠実な正確な回答を出させる
+                response_mime_type="application/json",
+                temperature=0.2,
             )
         )
         
-        # JSONモードをオンにしたため、不要な文字を削る処理が不要になりました
         return JSONResponse(content=json.loads(response.text))
 
     except Exception as e:
