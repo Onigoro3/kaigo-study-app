@@ -1,21 +1,18 @@
 import os
 import json
 from dotenv import load_dotenv
-# 【修正】新しい規格のライブラリを読み込み
 from google import genai
 from google.genai import types
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+# 【修正】FileResponse を追加してHTMLを返せるようにしました
+from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 
-# .envファイルからAPIキーなどの環境変数を読み込む
 load_dotenv()
 
-# アプリケーションの設定
 app = FastAPI()
 
-# フロントエンド（HTML）からの通信を許可する設定
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,19 +21,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 環境変数からAPIキーを安全に取得
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if not API_KEY:
     raise ValueError("APIキーが設定されていません。.envファイルを確認してください。")
 
-# 【修正】新しい規格のクライアント設定
 client = genai.Client(api_key=API_KEY)
+
+# 【新規追加】トップページ（URLそのまま）にアクセスされたら index.html を表示する
+@app.get("/")
+async def serve_frontend():
+    return FileResponse("index.html")
 
 @app.post("/api/analyze")
 async def analyze_image(
     file: UploadFile = File(...),
-    mode: str = Form(...) # 'textbook' または 'workbook' を受け取る
+    mode: str = Form(...)
 ):
     try:
         image_data = await file.read()
@@ -85,7 +85,6 @@ async def analyze_image(
             }
             """
 
-        # 【修正】新しい規格でのAI呼び出し処理
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=[

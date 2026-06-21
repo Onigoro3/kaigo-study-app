@@ -125,7 +125,7 @@
 
             try {
                 // Pythonサーバー(ローカル)へデータを送信
-                const response = await fetch("https://あなたのアプリ名.onrender.com/api/analyze", {
+                const response = await fetch("/api/analyze", {
                     method: "POST",
                     body: formData
                 });
