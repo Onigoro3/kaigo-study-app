@@ -36,7 +36,7 @@ async def serve_frontend():
 async def analyze_images(
     files: List[UploadFile] = File(...),
     mode: str = Form(...),
-    num_questions: int = Form(3) # 【新規追加】画面から問題数を受け取る
+    num_questions: int = Form(3)
 ):
     try:
         image_parts = []
@@ -46,7 +46,6 @@ async def analyze_images(
                 types.Part.from_bytes(data=data, mime_type=file.content_type)
             )
         
-        # 【変更】f文字列を使用し、問題数をAIに直接指示。JSONの括弧は {{ }} でエスケープしています。
         if mode == "workbook":
             prompt = f"""
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
@@ -96,7 +95,8 @@ async def analyze_images(
             )
         )
         
-        return JSONResponse(content=json.loads(response.text))
+        # 【修正箇所】strict=False を追加し、見えない改行などの特殊文字を許容するようにしました
+        return JSONResponse(content=json.loads(response.text, strict=False))
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
