@@ -70,9 +70,6 @@ async def analyze_images(
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
             2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。
                【重要】JSONエラーを防ぐため、HTMLタグの属性値には必ずシングルクォーテーションを使用してください。
-               例: <table class='w-full text-sm text-left border-collapse border border-gray-300 my-4 shadow-sm'>
-                 <thead class='bg-blue-100 font-bold text-gray-700'>
-               ※グラフの場合は、目盛りから読み取れる数値を推測し、表形式（年表や推移表など）に変換して出力してください。
             3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。
             以下のJSON形式で出力してください。
             {{
@@ -98,24 +95,28 @@ async def analyze_images(
                 response_mime_type="application/json",
                 temperature=0.2,
                 max_output_tokens=8192,
+                # 【修正】安全フィルターを完全に無効化（BLOCK_NONE）し、医療・介護用語での強制停止を完全に防ぐ
                 safety_settings=[
-                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
-                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
-                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
-                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=types.HarmBlockThreshold.BLOCK_ONLY_HIGH),
+                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+                    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
                 ]
             )
         )
         
         raw_text = response.text
-        if raw_text is None:
-            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。"}, status_code=500)
+        if not raw_text:
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。別の画像をお試しください。"}, status_code=500)
 
-        # JSON形式のマークダウンがついていたら取り除く
         raw_text = raw_text.replace('```json', '').replace('```', '').strip()
         
-        # エラーが出た場所の特定をしやすくするために strict=False を使用
-        return JSONResponse(content=json.loads(raw_text, strict=False))
+        try:
+            parsed_data = json.loads(raw_text, strict=False)
+            return JSONResponse(content=parsed_data)
+        except json.JSONDecodeError:
+            # 【修正】万が一途切れた場合でも、アプリがクラッシュしないように専用のエラーメッセージを返す
+            return JSONResponse(content={"error": "AIが表や文章を生成する途中で文字数制限に達して切れてしまいました。写真に写る範囲（表や文字）を少し減らして、分けて読み込ませてみてください。"}, status_code=500)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
