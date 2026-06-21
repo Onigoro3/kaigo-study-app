@@ -95,8 +95,19 @@ async def analyze_images(
             )
         )
         
-        # 【修正箇所】strict=False を追加し、見えない改行などの特殊文字を許容するようにしました
-        return JSONResponse(content=json.loads(response.text, strict=False))
+        # --- ここから強力なエラー処理に変更 ---
+        raw_text = response.text
+        
+        # もしAIの返答が空（None）だった場合は、クラッシュさせずに画面にエラー理由を返す
+        if raw_text is None:
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。画像が読み取れなかったか、テキスト内の言葉がAIの安全フィルターに誤検知された可能性があります。別の写真で試してみてください。"}, status_code=500)
+
+        # JSONモードでも不要なマークダウン記号が混ざることがあるため、念のため除去
+        raw_text = raw_text.replace('```json', '').replace('```', '').strip()
+        
+        # strict=False で読み込み
+        return JSONResponse(content=json.loads(raw_text, strict=False))
+        # --- ここまで ---
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
