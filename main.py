@@ -32,14 +32,13 @@ client = genai.Client(api_key=API_KEY)
 async def serve_frontend():
     return FileResponse("index.html")
 
-# 【変更】file -> files にし、List[UploadFile] で複数画像を受け取るようにしました
 @app.post("/api/analyze")
 async def analyze_images(
     files: List[UploadFile] = File(...),
-    mode: str = Form(...)
+    mode: str = Form(...),
+    num_questions: int = Form(3) # 【新規追加】画面から問題数を受け取る
 ):
     try:
-        # 複数画像のデータをAIに渡せる形式に変換
         image_parts = []
         for file in files:
             data = await file.read()
@@ -47,43 +46,43 @@ async def analyze_images(
                 types.Part.from_bytes(data=data, mime_type=file.content_type)
             )
         
-        # 【変更】プロンプトに「図面や表の解析」の指示を追加しました
+        # 【変更】f文字列を使用し、問題数をAIに直接指示。JSONの括弧は {{ }} でエスケープしています。
         if mode == "workbook":
-            prompt = """
+            prompt = f"""
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
             写真の中に「図、表、グラフ」が含まれている場合は、その内容もテキストとして詳しく説明し、問題を解くための手がかりとして含めてください。
             正解と、詳細な理由・解説（根拠となる法律や算定要件など）を含めてください。
             以下のJSON形式で出力してください。
-            {
+            {{
                 "type": "workbook",
                 "questions": [
-                    {
+                    {{
                         "question_text": "問題文（図表の説明含む）",
                         "options": ["選択肢1", "選択肢2", "選択肢3", "選択肢4"],
                         "answer": "正解の選択肢",
                         "explanation": "なぜこの答えになるのかの詳しい理由と解説"
-                    }
+                    }}
                 ]
-            }
+            }}
             """
         else:
-            prompt = """
+            prompt = f"""
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
             2. 写真の中に「図、表、グラフ」が含まれている場合は無視せず、その図解が何を表しているのか詳細にテキスト化（可能ならMarkdownの表形式で）して抽出テキストに含めてください。
-            3. その内容から、確認のためのオリジナル問題を3問作成してください。正解と詳細な解説を含めてください。
+            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。正解と詳細な解説を含めてください。
             以下のJSON形式で出力してください。
-            {
+            {{
                 "type": "textbook",
                 "extracted_text": "抽出されたテキストと図表の解説（<mark class='ai-mark'>重要語句</mark>）",
                 "generated_questions": [
-                    {
+                    {{
                         "question_text": "作成した問題文",
                         "options": ["選択肢1", "選択肢2", "選択肢3"],
                         "answer": "正解",
                         "explanation": "なぜこの答えになるのかの詳しい理由と解説"
-                    }
+                    }}
                 ]
-            }
+            }}
             """
 
         contents = [prompt] + image_parts

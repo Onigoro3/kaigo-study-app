@@ -8,7 +8,10 @@
     <style>
         .ai-mark { background-color: #fef08a; padding: 0 4px; border-radius: 2px; font-weight: bold; }
         .user-mark { background-color: #fbcfe8; padding: 0 4px; border-radius: 2px; }
-        /* 文字サイズ調整用の基本クラス */
+        
+        /* 【新規】文字サイズの全バリエーション */
+        .text-size-xsmall { font-size: 0.75rem; line-height: 1.5; }
+        .text-size-small { font-size: 0.875rem; line-height: 1.6; }
         .text-size-normal { font-size: 1rem; line-height: 1.8; }
         .text-size-large { font-size: 1.25rem; line-height: 2.0; }
         .text-size-xlarge { font-size: 1.5rem; line-height: 2.2; }
@@ -23,7 +26,8 @@
     </nav>
 
     <div class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div id="dashboard-page" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
                 <h2 class="text-xl font-bold mb-4 text-gray-700">📥 写真を読み込んで学習</h2>
@@ -38,6 +42,16 @@
                             <input type="radio" name="scan-mode" value="workbook" class="mr-2"> 問題集
                         </label>
                     </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">生成する問題数（教科書モード時）</label>
+                    <select id="question-count" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-blue-500 bg-white">
+                        <option value="3">3問（サクッと）</option>
+                        <option value="5">5問（標準）</option>
+                        <option value="7">7問（しっかり）</option>
+                        <option value="10">10問（がっつり）</option>
+                    </select>
                 </div>
 
                 <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
@@ -65,10 +79,7 @@
 
             <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500">
                 <h2 class="text-xl font-bold mb-4 text-gray-700">📂 登録済みフォルダ管理</h2>
-                
-                <ul id="folder-list" class="space-y-2 mb-6 max-h-40 overflow-y-auto border p-2 rounded bg-gray-50">
-                    </ul>
-
+                <ul id="folder-list" class="space-y-2 mb-6 max-h-40 overflow-y-auto border p-2 rounded bg-gray-50"></ul>
                 <h2 class="text-xl font-bold mb-4 text-gray-700 border-t pt-4">🎯 過去の問題を解く</h2>
                 <div class="mb-6">
                     <select id="quiz-folder-select" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-green-500 bg-white">
@@ -79,32 +90,42 @@
             </div>
         </div>
 
-        <div id="text-area" class="hidden mt-8 bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4 gap-4">
-                <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト（図解含む）</h2>
-                
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm font-bold text-gray-600">文字サイズ:</span>
-                    <button onclick="changeFontSize('normal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">中</button>
-                    <button onclick="changeFontSize('large')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">大</button>
-                    <button onclick="changeFontSize('xlarge')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">特大</button>
-                    
-                    <button id="highlight-btn" class="ml-4 bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold py-2 px-4 rounded shadow">
-                        🖋 選択文字にマーカー
-                    </button>
-                </div>
-            </div>
-            <div id="readable-text" class="text-gray-700 bg-gray-50 p-6 rounded-lg border text-size-normal"></div>
-        </div>
+        <div id="study-page" class="hidden">
+            
+            <button onclick="returnToDashboard()" class="mb-6 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow flex items-center transition">
+                <span class="mr-2">←</span> 別の写真を読み込む・トップへ戻る
+            </button>
 
-        <div id="quiz-area" class="hidden mt-8 bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-yellow-400">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">✨ 生成された問題</h2>
-            <div id="quiz-container" class="space-y-6"></div>
+            <div id="text-area" class="hidden bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500 mb-8">
+                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 border-b pb-4 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト（図解含む）</h2>
+                    
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-bold text-gray-600 mr-2">文字サイズ:</span>
+                        <button onclick="changeFontSize('xsmall')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow text-xs">極小</button>
+                        <button onclick="changeFontSize('small')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow text-sm">小</button>
+                        <button onclick="changeFontSize('normal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">中</button>
+                        <button onclick="changeFontSize('large')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">大</button>
+                        <button onclick="changeFontSize('xlarge')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">特大</button>
+                        
+                        <button id="highlight-btn" class="ml-2 bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold py-2 px-4 rounded shadow">
+                            🖋 選択文字にマーカー
+                        </button>
+                    </div>
+                </div>
+                <div id="readable-text" class="text-gray-700 bg-gray-50 p-6 rounded-lg border text-size-normal"></div>
+            </div>
+
+            <div id="quiz-area" class="hidden bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-yellow-400">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">✨ 生成された問題</h2>
+                <div id="quiz-container" class="space-y-6"></div>
+            </div>
+            
         </div>
     </div>
 
     <script>
-        // --- フォルダ管理（LocalStorage使用） ---
+        // --- フォルダ管理（変更なし） ---
         let folders = JSON.parse(localStorage.getItem('studyFolders')) || [];
 
         function renderFolders() {
@@ -114,7 +135,6 @@
             select.innerHTML = '<option>すべての範囲から</option>';
 
             folders.forEach((folder, index) => {
-                // リストへの追加（編集・削除ボタン付き）
                 const li = document.createElement('li');
                 li.className = "flex justify-between items-center bg-white p-2 border rounded shadow-sm";
                 li.innerHTML = `
@@ -126,7 +146,6 @@
                 `;
                 list.appendChild(li);
 
-                // プルダウンへの追加
                 const option = document.createElement('option');
                 option.textContent = folder;
                 select.appendChild(option);
@@ -161,13 +180,21 @@
             }
         }
 
-        // 初期表示
         renderFolders();
 
-        // --- 文字サイズ変更機能 ---
+        // --- 画面切り替えと文字サイズ変更 ---
+        const dashboardPage = document.getElementById('dashboard-page');
+        const studyPage = document.getElementById('study-page');
+
+        function returnToDashboard() {
+            studyPage.classList.add('hidden');
+            dashboardPage.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function changeFontSize(sizeMode) {
             const textBox = document.getElementById('readable-text');
-            textBox.classList.remove('text-size-normal', 'text-size-large', 'text-size-xlarge');
+            textBox.classList.remove('text-size-xsmall', 'text-size-small', 'text-size-normal', 'text-size-large', 'text-size-xlarge');
             textBox.classList.add(`text-size-${sizeMode}`);
         }
 
@@ -179,8 +206,8 @@
         const readableText = document.getElementById('readable-text');
         const quizArea = document.getElementById('quiz-area');
         const quizContainer = document.getElementById('quiz-container');
+        const questionCountInput = document.getElementById('question-count');
 
-        // 複数ファイルの選択表示
         imageInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) {
                 fileNameDisplay.textContent = `📸 ${e.target.files.length}枚の画像がセットされました`;
@@ -196,13 +223,14 @@
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
             const formData = new FormData();
             
-            // 複数ファイルをすべて追加
             for(let i = 0; i < imageInput.files.length; i++){
                 formData.append("files", imageInput.files[i]);
             }
             formData.append("mode", mode);
+            // 【新規】設定した問題数をPythonに送る
+            formData.append("num_questions", questionCountInput.value); 
 
-            extractBtn.textContent = "⚙️ AIが画像を解析中...（図面解析含む）";
+            extractBtn.textContent = "⚙️ AIが画像を解析中...";
             extractBtn.disabled = true;
             extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
 
@@ -262,11 +290,10 @@
                     quizArea.classList.remove('hidden');
                 }
 
-                if(data.type === "textbook") {
-                    textArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                    quizArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                // 【新規】解析成功したら、入力画面を隠して学習画面を表示する
+                dashboardPage.classList.add('hidden');
+                studyPage.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
 
             } catch (error) {
                 alert("解析に失敗しました。\n詳細: " + error.message);
