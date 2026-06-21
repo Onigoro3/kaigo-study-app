@@ -49,27 +49,32 @@
                 </div>
 
                 <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <label class="block text-sm font-bold text-gray-700 mb-3">📁 保存先フォルダ構成</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-3">📁 保存先フォルダ（クリックで過去の候補から選択可）</label>
                     <div class="space-y-3">
                         <div>
                             <span class="text-xs text-blue-800 font-bold">大カテゴリ</span>
-                            <input type="text" id="folder-large" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護、IT、語学">
+                            <input type="text" id="folder-large" list="list-large" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護、IT、語学">
+                            <datalist id="list-large"></datalist>
                         </div>
                         <div>
                             <span class="text-xs text-blue-800 font-bold">中カテゴリ</span>
-                            <input type="text" id="folder-medium" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護保険、Python、英語">
+                            <input type="text" id="folder-medium" list="list-medium" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護保険、Python、英語">
+                            <datalist id="list-medium"></datalist>
                         </div>
                         <div>
                             <span class="text-xs text-blue-800 font-bold">小フォルダ（セクション）</span>
-                            <input type="text" id="folder-small" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 1-1 居宅介護支援費">
+                            <input type="text" id="folder-small" list="list-small" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 1-1 居宅介護支援費">
+                            <datalist id="list-small"></datalist>
                         </div>
                     </div>
+                    <p class="text-xs text-gray-500 mt-2">※既存のフォルダを選べば、そこに追加でデータが保存されます。</p>
                 </div>
 
                 <div class="mb-6">
                     <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6">
                             <p class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
+                            <p class="text-xs text-gray-500 mt-1">選んだ写真は自動的に撮影順に並んで解析されます</p>
                         </div>
                         <input type="file" id="image-upload" class="hidden" accept="image/*" multiple />
                     </label>
@@ -83,26 +88,18 @@
 
             <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500 flex flex-col">
                 <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去のデータから復習する</h2>
-                <p class="text-sm text-gray-600 mb-6">順番にフォルダを選んでください。</p>
-                
                 <div class="space-y-4 mb-6 flex-grow">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">① 大カテゴリ</label>
-                        <select id="select-large" onchange="updateMediumDropdown()" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-white">
-                            <option value="">選択してください</option>
-                        </select>
+                        <select id="select-large" onchange="updateMediumDropdown()" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-white"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">② 中カテゴリ</label>
-                        <select id="select-medium" onchange="updateSmallDropdown()" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-gray-100" disabled>
-                            <option value="">大カテゴリを選んでください</option>
-                        </select>
+                        <select id="select-medium" onchange="updateSmallDropdown()" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-gray-100" disabled></select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">③ 小フォルダ</label>
-                        <select id="select-small" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-gray-100" disabled>
-                            <option value="">中カテゴリを選んでください</option>
-                        </select>
+                        <select id="select-small" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-gray-100" disabled></select>
                     </div>
                 </div>
 
@@ -125,9 +122,9 @@
                 <span id="current-folder-display" class="font-bold text-blue-800 bg-blue-100 py-1 px-3 rounded-full text-sm"></span>
             </div>
 
-            <div id="text-area" class="hidden bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500 mb-8">
-                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 border-b pb-4 gap-4">
-                    <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト</h2>
+            <div id="text-area" class="hidden bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500 mb-8 overflow-x-auto">
+                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 border-b pb-4 gap-4 min-w-max">
+                    <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト（図解含む）</h2>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-bold text-gray-600 mr-2">文字サイズ:</span>
                         <button onclick="changeFontSize('xsmall')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow text-xs">極小</button>
@@ -151,7 +148,30 @@
     <script>
         let studyData = JSON.parse(localStorage.getItem('studyDataTree')) || {};
 
-        // --- フォルダのドロップダウン連動処理 ---
+        // --- フォルダ入力欄の入力候補(Datalist)を更新する処理 ---
+        function updateDataLists() {
+            const listL = document.getElementById('list-large');
+            const listM = document.getElementById('list-medium');
+            const listS = document.getElementById('list-small');
+            
+            listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
+            
+            let setL = new Set(), setM = new Set(), setS = new Set();
+            for (const L in studyData) {
+                setL.add(L);
+                for (const M in studyData[L]) {
+                    setM.add(M);
+                    for (const S in studyData[L][M]) {
+                        setS.add(S);
+                    }
+                }
+            }
+            setL.forEach(v => listL.appendChild(new Option(v)));
+            setM.forEach(v => listM.appendChild(new Option(v)));
+            setS.forEach(v => listS.appendChild(new Option(v)));
+        }
+
+        // --- 過去データ選択ドロップダウンの更新処理 ---
         const selLarge = document.getElementById('select-large');
         const selMedium = document.getElementById('select-medium');
         const selSmall = document.getElementById('select-small');
@@ -163,27 +183,23 @@
                 opt.value = L; opt.textContent = L;
                 selLarge.appendChild(opt);
             }
-            updateMediumDropdown(); // リセット
+            updateMediumDropdown(); 
+            updateDataLists(); // 入力候補も同時に更新
         }
 
         function updateMediumDropdown() {
             const L = selLarge.value;
             selMedium.innerHTML = '<option value="">選択してください</option>';
             selSmall.innerHTML = '<option value="">中カテゴリを選んでください</option>';
-            selSmall.disabled = true;
-            selSmall.classList.add('bg-gray-100');
+            selSmall.disabled = true; selSmall.classList.add('bg-gray-100');
 
             if (L && studyData[L]) {
-                selMedium.disabled = false;
-                selMedium.classList.remove('bg-gray-100');
+                selMedium.disabled = false; selMedium.classList.remove('bg-gray-100');
                 for (const M in studyData[L]) {
                     const opt = document.createElement('option');
                     opt.value = M; opt.textContent = M;
                     selMedium.appendChild(opt);
                 }
-            } else {
-                selMedium.disabled = true;
-                selMedium.classList.add('bg-gray-100');
             }
         }
 
@@ -193,8 +209,7 @@
             selSmall.innerHTML = '<option value="">選択してください</option>';
 
             if (L && M && studyData[L][M]) {
-                selSmall.disabled = false;
-                selSmall.classList.remove('bg-gray-100');
+                selSmall.disabled = false; selSmall.classList.remove('bg-gray-100');
                 for (const S in studyData[L][M]) {
                     const count = studyData[L][M][S].length;
                     const opt = document.createElement('option');
@@ -202,16 +217,12 @@
                     selSmall.appendChild(opt);
                 }
             } else {
-                selSmall.disabled = true;
-                selSmall.classList.add('bg-gray-100');
+                selSmall.disabled = true; selSmall.classList.add('bg-gray-100');
             }
         }
 
         function saveToFolder(large, medium, small, data) {
-            large = large || '未分類';
-            medium = medium || '未分類';
-            small = small || '未分類';
-
+            large = large || '未分類'; medium = medium || '未分類'; small = small || '未分類';
             if (!studyData[large]) studyData[large] = {};
             if (!studyData[large][medium]) studyData[large][medium] = {};
             if (!studyData[large][medium][small]) studyData[large][medium][small] = [];
@@ -222,23 +233,18 @@
         }
 
         function deleteSelectedFolder() {
-            const L = selLarge.value;
-            const M = selMedium.value;
-            const S = selSmall.value;
-
+            const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("削除する小フォルダまで選択してください。");
             
             if (confirm(`「${L} ＞ ${M} ＞ ${S}」のデータを全て削除してもよろしいですか？`)) {
                 delete studyData[L][M][S];
                 if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
                 if (Object.keys(studyData[L]).length === 0) delete studyData[L];
-                
                 localStorage.setItem('studyDataTree', JSON.stringify(studyData));
                 renderLargeDropdown();
             }
         }
 
-        // 初期表示
         renderLargeDropdown();
 
         // --- 画面切り替え ---
@@ -261,13 +267,12 @@
         }
 
         function renderStudyPage(extractedTexts, questions, folderPathStr) {
-            textArea.classList.add('hidden');
-            quizArea.classList.add('hidden');
+            textArea.classList.add('hidden'); quizArea.classList.add('hidden');
             quizContainer.innerHTML = '';
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts.length > 0) {
-                readableText.innerHTML = extractedTexts.join('<br><hr class="my-4 border-dashed border-purple-300"><br>');
+                readableText.innerHTML = extractedTexts.join('<br><hr class="my-6 border-2 border-purple-300"><br>');
                 textArea.classList.remove('hidden');
             }
 
@@ -313,15 +318,11 @@
         }
 
         function loadSavedData() {
-            const L = selLarge.value;
-            const M = selMedium.value;
-            const S = selSmall.value;
-
+            const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
 
             const records = studyData[L][M][S];
-            let allTexts = [];
-            let allQuestions = [];
+            let allTexts = [], allQuestions = [];
 
             records.forEach(record => {
                 if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br>'));
@@ -341,24 +342,17 @@
                     const img = new Image();
                     img.src = event.target.result;
                     img.onload = () => {
-                        let width = img.width;
-                        let height = img.height;
+                        let width = img.width, height = img.height;
                         if (width > maxWidth || height > maxWidth) {
-                            if (width > height) {
-                                height = Math.round((height * maxWidth) / width);
-                                width = maxWidth;
-                            } else {
-                                width = Math.round((width * maxWidth) / height);
-                                height = maxWidth;
-                            }
+                            if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
+                            else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
                         }
                         const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
+                        canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         canvas.toBlob((blob) => {
-                            resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                            resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() }));
                         }, 'image/jpeg', 0.8);
                     };
                     img.onerror = (e) => reject(e);
@@ -387,29 +381,28 @@
             const L = document.getElementById('folder-large').value.trim();
             const M = document.getElementById('folder-medium').value.trim();
             const S = document.getElementById('folder-small').value.trim();
-
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
             const formData = new FormData();
             
-            extractBtn.textContent = "⚙️ 画像を圧縮中...";
+            extractBtn.textContent = "⚙️ 画像を準備中...";
             extractBtn.disabled = true;
             extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
 
-            for(let i = 0; i < imageInput.files.length; i++){
-                const compressedFile = await compressImage(imageInput.files[i]);
+            // 【アップデート】ファイルを名前（撮影順）で並び替えてから追加する
+            let filesArray = Array.from(imageInput.files);
+            filesArray.sort((a, b) => a.name.localeCompare(b.name));
+
+            for(let i = 0; i < filesArray.length; i++){
+                const compressedFile = await compressImage(filesArray[i]);
                 formData.append("files", compressedFile);
             }
             formData.append("mode", mode);
             formData.append("num_questions", questionCountInput.value);
 
-            extractBtn.textContent = "⚙️ AIが解析・保存中...";
+            extractBtn.textContent = "⚙️ AIが解析・保存中（表作成中は少し時間がかかります）...";
 
             try {
-                const response = await fetch("/api/analyze", {
-                    method: "POST",
-                    body: formData
-                });
-
+                const response = await fetch("/api/analyze", { method: "POST", body: formData });
                 if (!response.ok) {
                     let errorMsg = "サーバーエラーが発生しました";
                     try {
@@ -420,7 +413,6 @@
                 }
 
                 const data = await response.json();
-                
                 saveToFolder(L, M, S, data);
 
                 let textArr = [];
@@ -441,6 +433,7 @@
             }
         });
 
+        // マーカー機能
         document.getElementById('highlight-btn').addEventListener('click', function() {
             const selection = window.getSelection();
             if (!selection.rangeCount || selection.toString().trim() === '') {
