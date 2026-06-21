@@ -8,8 +8,6 @@
     <style>
         .ai-mark { background-color: #fef08a; padding: 0 4px; border-radius: 2px; font-weight: bold; }
         .user-mark { background-color: #fbcfe8; padding: 0 4px; border-radius: 2px; }
-        
-        /* 【新規】文字サイズの全バリエーション */
         .text-size-xsmall { font-size: 0.75rem; line-height: 1.5; }
         .text-size-small { font-size: 0.875rem; line-height: 1.6; }
         .text-size-normal { font-size: 1rem; line-height: 1.8; }
@@ -91,7 +89,6 @@
         </div>
 
         <div id="study-page" class="hidden">
-            
             <button onclick="returnToDashboard()" class="mb-6 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow flex items-center transition">
                 <span class="mr-2">←</span> 別の写真を読み込む・トップへ戻る
             </button>
@@ -99,7 +96,6 @@
             <div id="text-area" class="hidden bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500 mb-8">
                 <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 border-b pb-4 gap-4">
                     <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト（図解含む）</h2>
-                    
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-bold text-gray-600 mr-2">文字サイズ:</span>
                         <button onclick="changeFontSize('xsmall')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow text-xs">極小</button>
@@ -107,10 +103,7 @@
                         <button onclick="changeFontSize('normal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">中</button>
                         <button onclick="changeFontSize('large')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">大</button>
                         <button onclick="changeFontSize('xlarge')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">特大</button>
-                        
-                        <button id="highlight-btn" class="ml-2 bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold py-2 px-4 rounded shadow">
-                            🖋 選択文字にマーカー
-                        </button>
+                        <button id="highlight-btn" class="ml-2 bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold py-2 px-4 rounded shadow">🖋 選択文字にマーカー</button>
                     </div>
                 </div>
                 <div id="readable-text" class="text-gray-700 bg-gray-50 p-6 rounded-lg border text-size-normal"></div>
@@ -120,20 +113,17 @@
                 <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">✨ 生成された問題</h2>
                 <div id="quiz-container" class="space-y-6"></div>
             </div>
-            
         </div>
     </div>
 
     <script>
-        // --- フォルダ管理（変更なし） ---
+        // フォルダ管理・文字サイズ・画面切り替えの処理（前回と同様）
         let folders = JSON.parse(localStorage.getItem('studyFolders')) || [];
-
         function renderFolders() {
             const list = document.getElementById('folder-list');
             const select = document.getElementById('quiz-folder-select');
             list.innerHTML = '';
             select.innerHTML = '<option>すべての範囲から</option>';
-
             folders.forEach((folder, index) => {
                 const li = document.createElement('li');
                 li.className = "flex justify-between items-center bg-white p-2 border rounded shadow-sm";
@@ -145,13 +135,11 @@
                     </div>
                 `;
                 list.appendChild(li);
-
                 const option = document.createElement('option');
                 option.textContent = folder;
                 select.appendChild(option);
             });
         }
-
         function addFolder() {
             const input = document.getElementById('folder-name');
             const val = input.value.trim();
@@ -162,7 +150,6 @@
                 renderFolders();
             }
         }
-
         function editFolder(index) {
             const newName = prompt("新しいフォルダ名を入力してください:", folders[index]);
             if (newName && newName.trim() !== "") {
@@ -171,7 +158,6 @@
                 renderFolders();
             }
         }
-
         function deleteFolder(index) {
             if (confirm(`フォルダ「${folders[index]}」を削除してもよろしいですか？`)) {
                 folders.splice(index, 1);
@@ -179,26 +165,56 @@
                 renderFolders();
             }
         }
-
         renderFolders();
 
-        // --- 画面切り替えと文字サイズ変更 ---
         const dashboardPage = document.getElementById('dashboard-page');
         const studyPage = document.getElementById('study-page');
-
         function returnToDashboard() {
             studyPage.classList.add('hidden');
             dashboardPage.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
         function changeFontSize(sizeMode) {
             const textBox = document.getElementById('readable-text');
             textBox.classList.remove('text-size-xsmall', 'text-size-small', 'text-size-normal', 'text-size-large', 'text-size-xlarge');
             textBox.classList.add(`text-size-${sizeMode}`);
         }
 
-        // --- AI解析の処理 ---
+        // 【新規】画像を自動で圧縮（軽く）する関数
+        const compressImage = async (file, maxWidth = 1200) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth || height > maxWidth) {
+                            if (width > height) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            } else {
+                                width = Math.round((width * maxWidth) / height);
+                                height = maxWidth;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => {
+                            resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                        }, 'image/jpeg', 0.8);
+                    };
+                    img.onerror = (e) => reject(e);
+                };
+                reader.onerror = (e) => reject(e);
+            });
+        };
+
         const imageInput = document.getElementById('image-upload');
         const fileNameDisplay = document.getElementById('file-name');
         const extractBtn = document.getElementById('extract-btn');
@@ -223,16 +239,19 @@
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
             const formData = new FormData();
             
-            for(let i = 0; i < imageInput.files.length; i++){
-                formData.append("files", imageInput.files[i]);
-            }
-            formData.append("mode", mode);
-            // 【新規】設定した問題数をPythonに送る
-            formData.append("num_questions", questionCountInput.value); 
-
-            extractBtn.textContent = "⚙️ AIが画像を解析中...";
+            extractBtn.textContent = "⚙️ 画像を圧縮中...";
             extractBtn.disabled = true;
             extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
+
+            // 選んだ画像を1枚ずつ圧縮してからセットする
+            for(let i = 0; i < imageInput.files.length; i++){
+                const compressedFile = await compressImage(imageInput.files[i]);
+                formData.append("files", compressedFile);
+            }
+            formData.append("mode", mode);
+            formData.append("num_questions", questionCountInput.value);
+
+            extractBtn.textContent = "⚙️ AIが解析・問題生成中...";
 
             try {
                 const response = await fetch("/api/analyze", {
@@ -240,7 +259,17 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error("サーバーエラーが発生しました");
+                // 【修正】本当のエラー内容を取得して表示するようにしました
+                if (!response.ok) {
+                    let errorMsg = "サーバーエラーが発生しました";
+                    try {
+                        const errData = await response.json();
+                        if (errData && errData.error) errorMsg = errData.error;
+                    } catch (e) {
+                        errorMsg = `通信エラー（ステータスコード: ${response.status}）。`;
+                    }
+                    throw new Error(errorMsg);
+                }
 
                 const data = await response.json();
                 
@@ -290,7 +319,6 @@
                     quizArea.classList.remove('hidden');
                 }
 
-                // 【新規】解析成功したら、入力画面を隠して学習画面を表示する
                 dashboardPage.classList.add('hidden');
                 studyPage.classList.remove('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -304,7 +332,6 @@
             }
         });
 
-        // マーカー機能
         document.getElementById('highlight-btn').addEventListener('click', function() {
             const selection = window.getSelection();
             if (!selection.rangeCount || selection.toString().trim() === '') {
