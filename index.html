@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>介護請求 自主学習アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ai-mark { background-color: #fef08a; padding: 0 4px; border-radius: 2px; font-weight: bold; }
+        .user-mark { background-color: #fbcfe8; padding: 0 4px; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans leading-normal tracking-normal pb-10">
+
+    <nav class="bg-blue-600 p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <a class="text-white text-xl font-bold" href="#">介護請求ナビゲーター</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
+                <h2 class="text-xl font-bold mb-4 text-gray-700">📥 写真を読み込んで学習</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">読み込む種類</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="scan-mode" value="textbook" class="mr-2" checked> 教科書（テキスト化＋問題生成）
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="scan-mode" value="workbook" class="mr-2"> 問題集（そのままデジタル化）
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">📁 保存先フォルダ</label>
+                    <input type="text" id="folder-name" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-blue-500" placeholder="例: 1-1 居宅介護支援費">
+                </div>
+
+                <div class="mb-6">
+                    <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <p class="text-sm text-blue-600 font-semibold">📸 写真を撮影 / 選択</p>
+                        </div>
+                        <input type="file" id="image-upload" class="hidden" accept="image/*" capture="environment" />
+                    </label>
+                    <p id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 h-4"></p>
+                </div>
+                
+                <button id="extract-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow transition duration-200">
+                    AIに送信して解析スタート
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500">
+                <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去の問題を解く</h2>
+                <div class="mb-6">
+                    <select class="w-full border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-green-500 bg-white">
+                        <option>すべての範囲から（総合問題）</option>
+                        <option>1-1 居宅介護支援費</option>
+                    </select>
+                </div>
+                <div class="space-y-3">
+                    <button class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded shadow transition">選択した範囲からスタート</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="text-area" class="hidden mt-8 bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト</h2>
+                <button id="highlight-btn" class="bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold py-2 px-4 rounded shadow">
+                    🖋 選択文字にピンクマーカー
+                </button>
+            </div>
+            <div id="readable-text" class="text-gray-700 leading-loose bg-gray-50 p-6 rounded-lg border text-lg"></div>
+        </div>
+
+        <div id="quiz-area" class="hidden mt-8 bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-yellow-400">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">✨ 生成された問題</h2>
+            <div id="quiz-container" class="space-y-6">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('image-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const extractBtn = document.getElementById('extract-btn');
+        const textArea = document.getElementById('text-area');
+        const readableText = document.getElementById('readable-text');
+        const quizArea = document.getElementById('quiz-area');
+        const quizContainer = document.getElementById('quiz-container');
+
+        // 写真選択時の表示
+        imageInput.addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                fileNameDisplay.textContent = "📸 " + e.target.files[0].name + " がセットされました";
+            }
+        });
+
+        // 🌟 本物のAI通信処理 🌟
+        extractBtn.addEventListener('click', async function() {
+            if(!imageInput.files.length) {
+                alert("画像を選択してください！");
+                return;
+            }
+
+            // モード（教科書か問題集か）を取得
+            const mode = document.querySelector('input[name="scan-mode"]:checked').value;
+
+            // 送信準備
+            const formData = new FormData();
+            formData.append("file", imageInput.files[0]);
+            formData.append("mode", mode);
+
+            // ボタンをローディング状態に
+            extractBtn.textContent = "⚙️ AIが画像を解析中...（数秒〜十数秒かかります）";
+            extractBtn.disabled = true;
+            extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
+
+            try {
+                // Pythonサーバー(ローカル)へデータを送信
+                const response = await fetch("http://127.0.0.1:8000/api/analyze", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("サーバーエラーが発生しました");
+                }
+
+                const data = await response.json();
+                
+                // 表示のリセット
+                textArea.classList.add('hidden');
+                quizArea.classList.add('hidden');
+                quizContainer.innerHTML = '';
+
+                // 【教科書モードの場合】テキストを表示
+                if (data.type === "textbook" && data.extracted_text) {
+                    readableText.innerHTML = data.extracted_text.replace(/\n/g, '<br>');
+                    textArea.classList.remove('hidden');
+                }
+
+                // 【共通】問題を画面に組み立てて表示
+                const questions = data.generated_questions || data.questions;
+                if (questions && questions.length > 0) {
+                    questions.forEach((q, index) => {
+                        // 選択肢がある場合はHTMLを組み立てる
+                        let optionsHtml = '';
+                        if (q.options && q.options.length > 0) {
+                            optionsHtml = '<div class="space-y-2 mt-4">';
+                            q.options.forEach((opt, i) => {
+                                optionsHtml += `
+                                    <label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer">
+                                        <input type="radio" name="q${index}" class="mr-2"> ${opt}
+                                    </label>
+                                `;
+                            });
+                            optionsHtml += '</div>';
+                        } else {
+                            // 穴埋めなどの記述式の場合
+                            optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64" placeholder="解答を入力">`;
+                        }
+
+                        // 1問分のHTMLブロックを作成
+                        const questionBlock = `
+                            <div class="p-4 bg-gray-50 rounded-lg border">
+                                <h3 class="font-bold text-lg text-blue-900">Q${index + 1}. ${q.question_text}</h3>
+                                ${optionsHtml}
+                                <button class="mt-4 bg-blue-600 text-white font-bold py-2 px-4 rounded shadow" onclick="document.getElementById('ans${index}').classList.remove('hidden')">
+                                    答えと解説を見る
+                                </button>
+                                <div id="ans${index}" class="hidden mt-4 p-4 bg-green-100 text-green-900 rounded border border-green-300">
+                                    <p class="font-bold text-lg mb-2">正解：${q.answer}</p>
+                                    <hr class="border-green-300 mb-2">
+                                    <p class="text-sm leading-relaxed whitespace-pre-wrap">${q.explanation}</p>
+                                </div>
+                            </div>
+                        `;
+                        quizContainer.innerHTML += questionBlock;
+                    });
+                    quizArea.classList.remove('hidden');
+                }
+
+                // スクロールして見やすくする
+                if(data.type === "textbook") {
+                    textArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    quizArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+            } catch (error) {
+                alert("解析に失敗しました。Pythonサーバーが起動しているか確認してください。\n詳細: " + error.message);
+            } finally {
+                // ボタンを元の状態に戻す
+                extractBtn.textContent = "AIに送信して解析スタート";
+                extractBtn.disabled = false;
+                extractBtn.classList.replace('bg-gray-400', 'bg-blue-600');
+            }
+        });
+
+        // マーカー機能
+        document.getElementById('highlight-btn').addEventListener('click', function() {
+            const selection = window.getSelection();
+            if (!selection.rangeCount || selection.toString().trim() === '') {
+                alert("マーカーを引きたい文字をなぞってからボタンを押してください。");
+                return;
+            }
+            const range = selection.getRangeAt(0);
+            const span = document.createElement('span');
+            span.className = 'user-mark';
+            try {
+                range.surroundContents(span);
+                selection.removeAllRanges();
+            } catch (e) {
+                alert("改行などをまたいでマーカーを引くことはできません。");
+            }
+        });
+    </script>
+</body>
+</html>
