@@ -1,11 +1,14 @@
 import os
 import json
+from typing import List
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
+# 【新規】構造化データ（設計図）を作成するためのライブラリ
+from pydantic import BaseModel
 import uvicorn
 
 load_dotenv()
@@ -27,6 +30,20 @@ if not API_KEY:
 
 client = genai.Client(api_key=API_KEY)
 
+# ==========================================
+# 🌟 【最重要】AIの出力を100%綺麗なJSONにするための設計図定義
+# ==========================================
+class QuizQuestion(BaseModel):
+    question_text: str
+    options: List[str]
+    answer: str
+    explanation: str
+
+class StudyAnalyzeResponse(BaseModel):
+    type: str
+    extracted_text: str
+    generated_questions: List[QuizQuestion]
+
 @app.get("/")
 async def serve_frontend():
     return FileResponse("index.html")
@@ -43,57 +60,26 @@ async def analyze_image(
         
         if mode == "workbook":
             prompt = f"""
-            画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
-            写真の中に「表」や「グラフ」が含まれている場合は、HTMLの <table> タグを使用して見やすい表形式で解説に組み込んでください。
+            画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換して指定のデータ構造に格納してください。
+            写真の中に「表」や「グラフ」が含まれている場合は、HTMLの <table> タグを使用して見やすい表形式で解説（explanation）に組み込んでください。
             
-            【システムエラーを防ぐための絶対厳守ルール】
-            1. JSON構造を壊さないよう、テキスト内の改行はすべて \\n として出力してください（生の改行は絶対に禁止です）。
-            2. テキストおよびHTMLタグ内にダブルクォーテーション (") は一切使用しないでください。代わりにシングルクォーテーション (') を使用してください。
-            
-            以下のJSON形式で出力してください。
-            {{
-                "type": "workbook",
-                "questions": [
-                    {{
-                        "question_text": "問題文",
-                        "options": ["選択肢1", "選択肢2", "選択肢3", "選択肢4"],
-                        "answer": "正解の選択肢",
-                        "explanation": "解説"
-                    }}
-                ]
-            }}
+            ※extracted_text は空文字（""）にしてください。
             """
         else:
             prompt = f"""
-            1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
-            2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。装飾属性は付けず、最もシンプルな <table> のみを使用してください。
-            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。
-            
-            【システムエラーを防ぐための絶対厳守ルール】
-            1. JSON構造を壊さないよう、抽出テキストや解説文の中の改行はすべて \\n にエスケープしてください（生の改行は絶対に禁止です）。
-            2. テキストおよびHTMLタグ内にダブルクォーテーション (") は一切使用しないでください。代わりにシングルクォーテーション (') を使用してください。
-            
-            以下のJSON形式で出力してください。
-            {{
-                "type": "textbook",
-                "extracted_text": "抽出テキストと生成されたシンプルなHTMLテーブル",
-                "generated_questions": [
-                    {{
-                        "question_text": "作成した問題文",
-                        "options": ["選択肢1", "選択肢2", "選択肢3"],
-                        "answer": "正解",
-                        "explanation": "解説"
-                    }}
-                ]
-            }}
+            添付された教科書の画像を解析し、以下の指示に従って指定のデータ構造に格納してください。
+            1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んで extracted_text に格納してください。
+            2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用したシンプルな表（装飾属性なし）として抽出し、extracted_text 内に組み込んでください。
+            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成し、generated_questions に格納してください。
             """
 
-        # 🌟 ここが最重要：スピード特化のFlashから、天才的なProモデルに変更 🌟
+        # 🌟 response_schema を指定することで、AIは100%パース可能な綺麗なデータしか出せなくなります
         response = client.models.generate_content(
             model='gemini-2.5-pro',
             contents=[prompt, image_part],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
+                response_schema=StudyAnalyzeResponse, # これがパースエラーを根本解決する魔法の設定です
                 temperature=0.2,
                 max_output_tokens=8192,
                 safety_settings=[
@@ -107,16 +93,11 @@ async def analyze_image(
         
         raw_text = response.text
         if not raw_text:
-            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。"}, status_code=500)
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。別の画像をお試しください。"}, status_code=500)
 
-        raw_text = raw_text.replace('```json', '').replace('```', '').strip()
-        
-        try:
-            parsed_data = json.loads(raw_text, strict=False)
-            return JSONResponse(content=parsed_data)
-        except json.JSONDecodeError:
-            # エラーの際に何が原因かをもう少し分かりやすくしました
-            return JSONResponse(content={"error": "AIが回答の組み立てに失敗しました。少し文字がぼやけているか、光が反射している可能性があります。"}, status_code=500)
+        # システムが成形を保証しているため、安全にパースして即座に画面へ返却できます
+        parsed_data = json.loads(raw_text)
+        return JSONResponse(content=parsed_data)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
