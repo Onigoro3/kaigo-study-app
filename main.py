@@ -31,7 +31,6 @@ client = genai.Client(api_key=API_KEY)
 async def serve_frontend():
     return FileResponse("index.html")
 
-# 【変更】1枚ずつ確実に処理するため、複数のListではなく単一の file を受け取る形に変更しました
 @app.post("/api/analyze")
 async def analyze_image(
     file: UploadFile = File(...),
@@ -46,8 +45,11 @@ async def analyze_image(
             prompt = f"""
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
             写真の中に「表」や「グラフ」が含まれている場合は、HTMLの <table> タグを使用して見やすい表形式で解説に組み込んでください。
-            【重要】JSONエラーを防ぐため、table, tr, th, tdタグには class や style などの装飾属性を一切付けず、最もシンプルなタグのみを使用してください。
-            正解と、詳細な理由・解説を含めてください。
+            
+            【システムエラーを防ぐための絶対厳守ルール】
+            1. JSON構造を壊さないよう、テキスト内の改行はすべて \\n として出力してください（生の改行は絶対に禁止です）。
+            2. テキストおよびHTMLタグ内にダブルクォーテーション (") は一切使用しないでください。代わりにシングルクォーテーション (') を使用してください。
+            
             以下のJSON形式で出力してください。
             {{
                 "type": "workbook",
@@ -64,10 +66,13 @@ async def analyze_image(
         else:
             prompt = f"""
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
-            2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。
-               【最重要】文字数オーバーによるJSONエラーを確実に防ぐため、HTMLタグには class や style などの装飾属性を一切付けないでください。最もシンプルな <table><thead><tr><th>...</th></tr></thead><tbody><tr><td>...</td></tr></tbody></table> のみを使用してください。
-               ※グラフの場合は、目盛りから読み取れる数値を推測し、シンプルな表形式に変換して出力してください。
-            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。もし指定された問題数が0の場合は、空の配列 [] にしてください。
+            2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。装飾属性は付けず、最もシンプルな <table> のみを使用してください。
+            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。
+            
+            【システムエラーを防ぐための絶対厳守ルール】
+            1. JSON構造を壊さないよう、抽出テキストや解説文の中の改行はすべて \\n にエスケープしてください（生の改行は絶対に禁止です）。
+            2. テキストおよびHTMLタグ内にダブルクォーテーション (") は一切使用しないでください。代わりにシングルクォーテーション (') を使用してください。
+            
             以下のJSON形式で出力してください。
             {{
                 "type": "textbook",
@@ -83,8 +88,9 @@ async def analyze_image(
             }}
             """
 
+        # 🌟 ここが最重要：スピード特化のFlashから、天才的なProモデルに変更 🌟
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.5-pro',
             contents=[prompt, image_part],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -109,7 +115,8 @@ async def analyze_image(
             parsed_data = json.loads(raw_text, strict=False)
             return JSONResponse(content=parsed_data)
         except json.JSONDecodeError:
-            return JSONResponse(content={"error": "AIの出力データが途中で切れてしまいました。画像の文字密度が高すぎる可能性があります。"}, status_code=500)
+            # エラーの際に何が原因かをもう少し分かりやすくしました
+            return JSONResponse(content={"error": "AIが回答の組み立てに失敗しました。少し文字がぼやけているか、光が反射している可能性があります。"}, status_code=500)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
