@@ -74,16 +74,15 @@
                     </div>
                 </div>
 
-                <!-- 【スマホバグ完全修正】 labelではなくdivを使い、inputはopacity-0で全体に被せる -->
                 <div class="mb-6">
                     <div class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition overflow-hidden">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                             <p class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
                             <p class="text-xs text-gray-500 mt-1">選んだ写真は自動的に撮影順に並んで解析されます</p>
                         </div>
-                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" multiple />
+                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" multiple />
                     </div>
-                    <p id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 h-4"></p>
+                    <div id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 min-h-[1rem]"></div>
                 </div>
                 
                 <button id="extract-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow transition duration-200">
@@ -91,7 +90,6 @@
                 </button>
             </div>
 
-            <!-- 過去データ呼び出しエリア -->
             <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500 flex flex-col">
                 <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去のデータから復習する</h2>
                 <div class="space-y-4 mb-6 flex-grow">
@@ -120,7 +118,6 @@
             </div>
         </div>
 
-        <!-- 学習画面 -->
         <div id="study-page" class="hidden">
             <div class="flex justify-between items-center mb-6">
                 <button onclick="returnToDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow flex items-center transition">
@@ -131,7 +128,7 @@
 
             <div id="text-area" class="hidden bg-white p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500 mb-8 overflow-x-auto">
                 <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 border-b pb-4 gap-4 min-w-max">
-                    <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト（図解含む）</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">📄 読み取りテキスト</h2>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-bold text-gray-600 mr-2">文字サイズ:</span>
                         <button onclick="changeFontSize('xsmall')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow text-xs">極小</button>
@@ -139,6 +136,11 @@
                         <button onclick="changeFontSize('normal')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">中</button>
                         <button onclick="changeFontSize('large')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">大</button>
                         <button onclick="changeFontSize('xlarge')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded shadow">特大</button>
+                        
+                        <button id="tts-btn" class="ml-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold py-2 px-4 rounded shadow flex items-center transition">
+                            <span id="tts-icon" class="mr-1">🔊</span> <span id="tts-text">読み上げ</span>
+                        </button>
+
                         <button id="highlight-btn" class="ml-2 bg-pink-500 hover:bg-pink-600 text-white text-sm font-bold py-2 px-4 rounded shadow">🖋 マーカー</button>
                     </div>
                 </div>
@@ -309,7 +311,21 @@
         const quizContainer = document.getElementById('quiz-container');
         const currentFolderDisplay = document.getElementById('current-folder-display');
 
+        // 【新規】 読み上げ用の変数
+        let isSpeaking = false;
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsIcon = document.getElementById('tts-icon');
+        const ttsText = document.getElementById('tts-text');
+
         function returnToDashboard() {
+            // トップに戻る時は音声を強制ストップする
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            ttsIcon.textContent = '🔊';
+            ttsText.textContent = '読み上げ';
+            ttsBtn.classList.replace('bg-red-500', 'bg-indigo-500');
+            ttsBtn.classList.replace('hover:bg-red-600', 'hover:bg-indigo-600');
+
             studyPage.classList.add('hidden');
             dashboardPage.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -413,11 +429,51 @@
         const extractBtn = document.getElementById('extract-btn');
         const questionCountInput = document.getElementById('question-count');
 
+        // 【修正】 選んだファイル名を画面上に一覧表示するように変更
         imageInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) {
-                fileNameDisplay.textContent = `📸 ${e.target.files.length}枚の画像がセットされました`;
+                const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>');
+                fileNameDisplay.innerHTML = `📸 ${e.target.files.length}枚の画像がセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
             } else {
-                fileNameDisplay.textContent = ''; // 【バグ修正済】キャンセル時はリセット
+                fileNameDisplay.innerHTML = '';
+            }
+        });
+
+        // 【新規】 読み上げボタンの処理
+        ttsBtn.addEventListener('click', function() {
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+                ttsIcon.textContent = '🔊';
+                ttsText.textContent = '読み上げ';
+                ttsBtn.classList.replace('bg-red-500', 'bg-indigo-500');
+                ttsBtn.classList.replace('hover:bg-red-600', 'hover:bg-indigo-600');
+            } else {
+                // innerTextを使うことでHTMLタグ（テーブルなど）を除いた純粋なテキストを取得
+                const textToSpeak = readableText.innerText;
+                if (!textToSpeak.trim()) {
+                    alert("読み上げるテキストがありません。");
+                    return;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'ja-JP';
+                utterance.rate = 1.0; // 読み上げ速度
+
+                utterance.onend = function() {
+                    isSpeaking = false;
+                    ttsIcon.textContent = '🔊';
+                    ttsText.textContent = '読み上げ';
+                    ttsBtn.classList.replace('bg-red-500', 'bg-indigo-500');
+                    ttsBtn.classList.replace('hover:bg-red-600', 'hover:bg-indigo-600');
+                };
+
+                window.speechSynthesis.speak(utterance);
+                isSpeaking = true;
+                ttsIcon.textContent = '⏹️';
+                ttsText.textContent = '停止';
+                ttsBtn.classList.replace('bg-indigo-500', 'bg-red-500');
+                ttsBtn.classList.replace('hover:bg-indigo-600', 'hover:bg-red-600');
             }
         });
 
@@ -499,7 +555,7 @@
                 renderStudyPage(textArr, finalCombinedData.generated_questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
 
                 imageInput.value = '';
-                fileNameDisplay.textContent = '';
+                fileNameDisplay.innerHTML = '';
 
             } catch (error) {
                 alert("解析の途中で失敗しました。\n詳細: " + error.message);
