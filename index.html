@@ -38,8 +38,8 @@
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-2">読み込む種類</label>
                     <div class="flex space-x-4">
-                        <label class="flex items-center cursor-pointer"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked> 教科書</label>
-                        <label class="flex items-center cursor-pointer"><input type="radio" name="scan-mode" value="workbook" class="mr-2"> 問題集</label>
+                        <label class="flex items-center cursor-pointer"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked /> 教科書</label>
+                        <label class="flex items-center cursor-pointer"><input type="radio" name="scan-mode" value="workbook" class="mr-2" /> 問題集</label>
                     </div>
                 </div>
 
@@ -58,29 +58,29 @@
                     <div class="space-y-3">
                         <div>
                             <span class="text-xs text-blue-800 font-bold">大カテゴリ</span>
-                            <input type="text" id="folder-large" list="list-large" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護、IT、語学">
+                            <input type="text" id="folder-large" list="list-large" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護、IT、語学" />
                             <datalist id="list-large"></datalist>
                         </div>
                         <div>
                             <span class="text-xs text-blue-800 font-bold">中カテゴリ</span>
-                            <input type="text" id="folder-medium" list="list-medium" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護保険、Python、英語">
+                            <input type="text" id="folder-medium" list="list-medium" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護保険、Python、英語" />
                             <datalist id="list-medium"></datalist>
                         </div>
                         <div>
                             <span class="text-xs text-blue-800 font-bold">小フォルダ（セクション）</span>
-                            <input type="text" id="folder-small" list="list-small" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 1-1 居宅介護支援費">
+                            <input type="text" id="folder-small" list="list-small" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 1-1 居宅介護支援費" />
                             <datalist id="list-small"></datalist>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-6">
-                    <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition">
-                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <label class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition overflow-hidden">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                             <p class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
                             <p class="text-xs text-gray-500 mt-1">選んだ写真は自動的に撮影順に並んで解析されます</p>
                         </div>
-                        <input type="file" id="image-upload" class="hidden" accept="image/*" multiple />
+                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" multiple />
                     </label>
                     <p id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 h-4"></p>
                 </div>
@@ -150,10 +150,8 @@
     </div>
 
     <script>
-        // 【修正】サーバー（Supabase）から非同期で取得するため初期値は空
         let studyData = {};
 
-        // 🌟 クラウド（Supabase）へデータを送信・同期する関数
         async function syncDataWithServer() {
             try {
                 await fetch("/api/save-data", {
@@ -166,7 +164,6 @@
             }
         }
 
-        // 🌟 クラウドからデータを取得して初期化する関数
         async function loadDataFromServer() {
             try {
                 const response = await fetch("/api/load-data");
@@ -175,13 +172,13 @@
                     if (serverData && Object.keys(serverData).length > 0) {
                         studyData = serverData;
                     } else {
-                        // クラウド側に何もデータがない場合の初期シード
+                        // 【修正】VSCodeエラー対策：JS内のHTMLタグ記号をエスケープ
                         studyData = {
                             "共通様式": {
                                 "国保連提出書類": {
                                     "様式第二（介護給付費明細書）": [{
                                         "type": "textbook",
-                                        "extracted_text": "<h3>【様式第二：介護給付費明細書】の構造と必須記載ルール</h3><br>様式第二は、介護サービス事業所が国保連へ請求する最も重要な明細書です。<br><br><table><thead><tr><th>対象エリア</th><th>記載項目</th><th>テスト対策・実務の罠</th></tr></thead><tbody><tr><td>ヘッダー部</td><td>保険者番号・被保険者番号</td><td>市町村を跨ぐ転居時、旧番号での請求ミスが頻出。必ず現在の被保険者証を確認すること。</td></tr><tr><td>明細欄</td><td>サービスコード・単位数</td><td>サービスコードの「加算・減算算定要件」の根拠が一番狙われます。特に夜間・早朝加算の算定時間帯に注意。</td></tr><tr><td>集計部</td><td>請求額・利用者負担額</td><td>給付率（原則9割、所得により8割・7割）の掛け算ミスに注意。端数処理は『1円未満切り捨て』です。</td></tr></tbody></table>",
+                                        "extracted_text": "<h3>【様式第二：介護給付費明細書】の構造と必須記載ルール<\/h3><br \/>様式第二は、介護サービス事業所が国保連へ請求する最も重要な明細書です。<br \/><br \/><table><thead><tr><th>対象エリア<\/th><th>記載項目<\/th><th>テスト対策・実務の罠<\/th><\/tr><\/thead><tbody><tr><td>ヘッダー部<\/td><td>保険者番号・被保険者番号<\/td><td>市町村を跨ぐ転居時、旧番号での請求ミスが頻出。必ず現在の被保険者証を確認すること。<\/td><\/tr><tr><td>明細欄<\/td><td>サービスコード・単位数<\/td><td>サービスコードの「加算・減算算定要件」の根拠が一番狙われます。特に夜間・早朝加算の算定時間帯に注意。<\/td><\/tr><tr><td>集計部<\/td><td>請求額・利用者負担額<\/td><td>給付率（原則9割、所得により8割・7割）の掛け算ミスに注意。端数処理は『1円未満切り捨て』です。<\/td><\/tr><\/tbody><\/table>",
                                         "generated_questions": [{
                                             "question_text": "様式第二における請求額および利用者負担額の計算で、端数（1円未満）が生じた場合の処理として正しいものはどれか。",
                                             "options": ["四捨五入する", "切り上げる", "切り捨てる", "市町村の条例による"],
@@ -191,7 +188,7 @@
                                     }],
                                     "様式第八（居宅介護サービス計画費明細書）": [{
                                         "type": "textbook",
-                                        "extracted_text": "<h3>【様式第八：居宅介護サービス計画費明細書】の構造と必須記載ルール</h3><br>様式第八は、居宅介護支援事業所（ケアマネジャー）が「ケアプラン作成費」を国保連へ100%給付請求するための書類です。<br><br><table><thead><tr><th>対象エリア</th><th>特有の記載ルール</th><th>実務・テストでのチェック要件</th></tr></thead><tbody><tr><td>給付率欄</td><td>常に「10割（100%）」</td><td>居宅介護支援（ケアプラン作成）は利用者負担がありません。ここを9割などと勘違いさせる引っ掛け問題が頻出します。</td></tr><tr><td>請求内容</td><td>事業所番号・基本単位数</td><td>居宅介護支援費Ⅰ・Ⅱの算定基準（ケアマネ1人あたりの担当件数による逓減制など）が問題の根拠になりやすいです。</td></tr></tbody></table>",
+                                        "extracted_text": "<h3>【様式第八：居宅介護サービス計画費明細書】の構造と必須記載ルール<\/h3><br \/>様式第八は、居宅介護支援事業所（ケアマネジャー）が「ケアプラン作成費」を国保連へ100%給付請求するための書類です。<br \/><br \/><table><thead><tr><th>対象エリア<\/th><th>特有の記載ルール<\/th><th>実務・テストでのチェック要件<\/th><\/tr><\/thead><tbody><tr><td>給付率欄<\/td><td>常に「10割（100%）」<\/td><td>居宅介護支援（ケアプラン作成）は利用者負担がありません。ここを9割などと勘違いさせる引っ掛け問題が頻出します。<\/td><\/tr><tr><td>請求内容<\/td><td>事業所番号・基本単位数<\/td><td>居宅介護支援費Ⅰ・Ⅱの算定基準（ケアマネ1人あたりの担当件数による逓減制など）が問題の根拠になりやすいです。<\/td><\/tr><\/tbody><\/table>",
                                         "generated_questions": [{
                                             "question_text": "様式第八（居宅介護サービス計画費明細書）において、保険給付率として指定される正しい割合はどれか。",
                                             "options": ["7割", "8割", "9割", "10割"],
@@ -262,7 +259,8 @@
         function updateSmallDropdown() {
             const L = selLarge.value; const M = selMedium.value;
             selSmall.innerHTML = '<option value="">選択してください</option>';
-            if (L && M && studyData[L][M]) {
+            // 【安全対策】念のため上位階層が存在するかをチェック
+            if (L && M && studyData[L] && studyData[L][M]) {
                 selSmall.disabled = false; selSmall.classList.remove('bg-gray-100');
                 for (const S in studyData[L][M]) {
                     const count = studyData[L][M][S].length;
@@ -275,7 +273,6 @@
             }
         }
 
-        // 【修正】追加時にクラウドへ同期
         async function saveToFolder(large, medium, small, data) {
             large = large || '未分類'; medium = medium || '未分類'; small = small || '未分類';
             if (!studyData[large]) studyData[large] = {};
@@ -287,7 +284,6 @@
             renderLargeDropdown();
         }
 
-        // 【修正】削除時にクラウドへ同期
         async function deleteSelectedFolder() {
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("削除する小フォルダまで選択してください。");
@@ -301,7 +297,6 @@
             }
         }
 
-        // 🌟 クラウドからの初期ロード開始
         loadDataFromServer();
 
         const dashboardPage = document.getElementById('dashboard-page');
@@ -328,7 +323,7 @@
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts.length > 0) {
-                readableText.innerHTML = extractedTexts.join('<br><hr class="my-6 border-2 border-purple-300"><br>');
+                readableText.innerHTML = extractedTexts.join('<br \/><hr class="my-6 border-2 border-purple-300" \/><br \/>');
                 textArea.classList.remove('hidden');
             }
 
@@ -338,15 +333,17 @@
                     if (q.options && q.options.length > 0) {
                         optionsHtml = '<div class="space-y-2 mt-4">';
                         q.options.forEach((opt) => {
+                            // 【修正】VSCodeエラー対策として末尾に / を追加
                             optionsHtml += `
                                 <label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-lg">
-                                    <input type="radio" name="q${index}" class="mr-2"> ${opt}
+                                    <input type="radio" name="q${index}" class="mr-2" /> ${opt}
                                 </label>
                             `;
                         });
                         optionsHtml += '</div>';
                     } else {
-                        optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-lg" placeholder="解答を入力">`;
+                        // 【修正】VSCodeエラー対策として末尾に / を追加
+                        optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-lg" placeholder="解答を入力" />`;
                     }
 
                     const questionBlock = `
@@ -358,7 +355,7 @@
                             </button>
                             <div id="ans${index}" class="hidden mt-4 p-4 bg-green-100 text-green-900 rounded border border-green-300">
                                 <p class="font-bold text-xl mb-2">正解：${q.answer}</p>
-                                <hr class="border-green-300 mb-2">
+                                <hr class="border-green-300 mb-2" />
                                 <p class="text-base leading-relaxed whitespace-pre-wrap">${q.explanation}</p>
                             </div>
                         </div>
@@ -379,7 +376,7 @@
             const records = studyData[L][M][S];
             let allTexts = [], allQuestions = [];
             records.forEach(record => {
-                if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br>'));
+                if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br \/>'));
                 const q = record.generated_questions || record.questions;
                 if (q) allQuestions = allQuestions.concat(q);
             });
@@ -496,7 +493,7 @@
                 await saveToFolder(L, M, S, finalCombinedData);
 
                 let textArr = [];
-                if (finalCombinedData.extracted_text) textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br>'));
+                if (finalCombinedData.extracted_text) textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br \/>'));
                 renderStudyPage(textArr, finalCombinedData.generated_questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
 
                 imageInput.value = '';
