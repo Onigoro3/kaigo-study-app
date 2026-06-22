@@ -75,13 +75,13 @@
                 </div>
 
                 <div class="mb-6">
-                    <label class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition overflow-hidden">
+                    <div class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition overflow-hidden">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                             <p class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
                             <p class="text-xs text-gray-500 mt-1">選んだ写真は自動的に撮影順に並んで解析されます</p>
                         </div>
                         <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" multiple />
-                    </label>
+                    </div>
                     <p id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 h-4"></p>
                 </div>
                 
@@ -416,6 +416,8 @@
         imageInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) {
                 fileNameDisplay.textContent = `📸 ${e.target.files.length}枚の画像がセットされました`;
+            } else {
+                fileNameDisplay.textContent = ''; // キャンセルされたら表示を消す
             }
         });
 
