@@ -74,6 +74,7 @@
                     </div>
                 </div>
 
+                <!-- 【スマホバグ完全修正】 labelではなくdivを使い、inputはopacity-0で全体に被せる -->
                 <div class="mb-6">
                     <div class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition overflow-hidden">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
@@ -90,6 +91,7 @@
                 </button>
             </div>
 
+            <!-- 過去データ呼び出しエリア -->
             <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500 flex flex-col">
                 <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去のデータから復習する</h2>
                 <div class="space-y-4 mb-6 flex-grow">
@@ -118,6 +120,7 @@
             </div>
         </div>
 
+        <!-- 学習画面 -->
         <div id="study-page" class="hidden">
             <div class="flex justify-between items-center mb-6">
                 <button onclick="returnToDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow flex items-center transition">
@@ -172,13 +175,13 @@
                     if (serverData && Object.keys(serverData).length > 0) {
                         studyData = serverData;
                     } else {
-                        // 【修正】VSCodeエラー対策：JS内のHTMLタグ記号をエスケープ
+                        // 【エスケープ処理済】 VSCodeが誤検知しないようにJS内の終了タグを無害化
                         studyData = {
                             "共通様式": {
                                 "国保連提出書類": {
                                     "様式第二（介護給付費明細書）": [{
                                         "type": "textbook",
-                                        "extracted_text": "<h3>【様式第二：介護給付費明細書】の構造と必須記載ルール<\/h3><br \/>様式第二は、介護サービス事業所が国保連へ請求する最も重要な明細書です。<br \/><br \/><table><thead><tr><th>対象エリア<\/th><th>記載項目<\/th><th>テスト対策・実務の罠<\/th><\/tr><\/thead><tbody><tr><td>ヘッダー部<\/td><td>保険者番号・被保険者番号<\/td><td>市町村を跨ぐ転居時、旧番号での請求ミスが頻出。必ず現在の被保険者証を確認すること。<\/td><\/tr><tr><td>明細欄<\/td><td>サービスコード・単位数<\/td><td>サービスコードの「加算・減算算定要件」の根拠が一番狙われます。特に夜間・早朝加算の算定時間帯に注意。<\/td><\/tr><tr><td>集計部<\/td><td>請求額・利用者負担額<\/td><td>給付率（原則9割、所得により8割・7割）の掛け算ミスに注意。端数処理は『1円未満切り捨て』です。<\/td><\/tr><\/tbody><\/table>",
+                                        "extracted_text": "<h3>【様式第二：介護給付費明細書】の構造と必須記載ルール<\\/h3><br \\/>様式第二は、介護サービス事業所が国保連へ請求する最も重要な明細書です。<br \\/><br \\/><table><thead><tr><th>対象エリア<\\/th><th>記載項目<\\/th><th>テスト対策・実務の罠<\\/th><\\/tr><\\/thead><tbody><tr><td>ヘッダー部<\\/td><td>保険者番号・被保険者番号<\\/td><td>市町村を跨ぐ転居時、旧番号での請求ミスが頻出。必ず現在の被保険者証を確認すること。<\\/td><\\/tr><tr><td>明細欄<\\/td><td>サービスコード・単位数<\\/td><td>サービスコードの「加算・減算算定要件」の根拠が一番狙われます。特に夜間・早朝加算の算定時間帯に注意。<\\/td><\\/tr><tr><td>集計部<\\/td><td>請求額・利用者負担額<\\/td><td>給付率（原則9割、所得により8割・7割）の掛け算ミスに注意。端数処理は『1円未満切り捨て』です。<\\/td><\\/tr><\\/tbody><\\/table>".replace(/\\\//g, '/'),
                                         "generated_questions": [{
                                             "question_text": "様式第二における請求額および利用者負担額の計算で、端数（1円未満）が生じた場合の処理として正しいものはどれか。",
                                             "options": ["四捨五入する", "切り上げる", "切り捨てる", "市町村の条例による"],
@@ -188,7 +191,7 @@
                                     }],
                                     "様式第八（居宅介護サービス計画費明細書）": [{
                                         "type": "textbook",
-                                        "extracted_text": "<h3>【様式第八：居宅介護サービス計画費明細書】の構造と必須記載ルール<\/h3><br \/>様式第八は、居宅介護支援事業所（ケアマネジャー）が「ケアプラン作成費」を国保連へ100%給付請求するための書類です。<br \/><br \/><table><thead><tr><th>対象エリア<\/th><th>特有の記載ルール<\/th><th>実務・テストでのチェック要件<\/th><\/tr><\/thead><tbody><tr><td>給付率欄<\/td><td>常に「10割（100%）」<\/td><td>居宅介護支援（ケアプラン作成）は利用者負担がありません。ここを9割などと勘違いさせる引っ掛け問題が頻出します。<\/td><\/tr><tr><td>請求内容<\/td><td>事業所番号・基本単位数<\/td><td>居宅介護支援費Ⅰ・Ⅱの算定基準（ケアマネ1人あたりの担当件数による逓減制など）が問題の根拠になりやすいです。<\/td><\/tr><\/tbody><\/table>",
+                                        "extracted_text": "<h3>【様式第八：居宅介護サービス計画費明細書】の構造と必須記載ルール<\\/h3><br \\/>様式第八は、居宅介護支援事業所（ケアマネジャー）が「ケアプラン作成費」を国保連へ100%給付請求するための書類です。<br \\/><br \\/><table><thead><tr><th>対象エリア<\\/th><th>特有の記載ルール<\\/th><th>実務・テストでのチェック要件<\\/th><\\/tr><\\/thead><tbody><tr><td>給付率欄<\\/td><td>常に「10割（100%）」<\\/td><td>居宅介護支援（ケアプラン作成）は利用者負担がありません。ここを9割などと勘違いさせる引っ掛け問題が頻出します。<\\/td><\\/tr><tr><td>請求内容<\\/td><td>事業所番号・基本単位数<\\/td><td>居宅介護支援費Ⅰ・Ⅱの算定基準（ケアマネ1人あたりの担当件数による逓減制など）が問題の根拠になりやすいです。<\\/td><\\/tr><\\/tbody><\\/table>".replace(/\\\//g, '/'),
                                         "generated_questions": [{
                                             "question_text": "様式第八（居宅介護サービス計画費明細書）において、保険給付率として指定される正しい割合はどれか。",
                                             "options": ["7割", "8割", "9割", "10割"],
@@ -197,7 +200,7 @@
                                         }]
                                     }]
                                 }
-                            ]
+                            }
                         };
                         await syncDataWithServer();
                     }
@@ -259,7 +262,6 @@
         function updateSmallDropdown() {
             const L = selLarge.value; const M = selMedium.value;
             selSmall.innerHTML = '<option value="">選択してください</option>';
-            // 【安全対策】念のため上位階層が存在するかをチェック
             if (L && M && studyData[L] && studyData[L][M]) {
                 selSmall.disabled = false; selSmall.classList.remove('bg-gray-100');
                 for (const S in studyData[L][M]) {
@@ -323,7 +325,7 @@
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts.length > 0) {
-                readableText.innerHTML = extractedTexts.join('<br \/><hr class="my-6 border-2 border-purple-300" \/><br \/>');
+                readableText.innerHTML = extractedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
                 textArea.classList.remove('hidden');
             }
 
@@ -333,7 +335,6 @@
                     if (q.options && q.options.length > 0) {
                         optionsHtml = '<div class="space-y-2 mt-4">';
                         q.options.forEach((opt) => {
-                            // 【修正】VSCodeエラー対策として末尾に / を追加
                             optionsHtml += `
                                 <label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-lg">
                                     <input type="radio" name="q${index}" class="mr-2" /> ${opt}
@@ -342,7 +343,6 @@
                         });
                         optionsHtml += '</div>';
                     } else {
-                        // 【修正】VSCodeエラー対策として末尾に / を追加
                         optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-lg" placeholder="解答を入力" />`;
                     }
 
@@ -376,7 +376,7 @@
             const records = studyData[L][M][S];
             let allTexts = [], allQuestions = [];
             records.forEach(record => {
-                if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br \/>'));
+                if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br />'));
                 const q = record.generated_questions || record.questions;
                 if (q) allQuestions = allQuestions.concat(q);
             });
@@ -417,7 +417,7 @@
             if(e.target.files.length > 0) {
                 fileNameDisplay.textContent = `📸 ${e.target.files.length}枚の画像がセットされました`;
             } else {
-                fileNameDisplay.textContent = ''; // キャンセルされたら表示を消す
+                fileNameDisplay.textContent = ''; // 【バグ修正済】キャンセル時はリセット
             }
         });
 
@@ -495,7 +495,7 @@
                 await saveToFolder(L, M, S, finalCombinedData);
 
                 let textArr = [];
-                if (finalCombinedData.extracted_text) textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br \/>'));
+                if (finalCombinedData.extracted_text) textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br />'));
                 renderStudyPage(textArr, finalCombinedData.generated_questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
 
                 imageInput.value = '';
