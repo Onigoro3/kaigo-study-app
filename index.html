@@ -14,7 +14,6 @@
         .text-size-large { font-size: 1.25rem; line-height: 2.0; }
         .text-size-xlarge { font-size: 1.5rem; line-height: 2.2; }
         
-        /* 【新規】AIが作ったシンプルな表を、自動で綺麗にデザインする魔法のコード */
         #readable-text table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         #readable-text th, #readable-text td { border: 1px solid #d1d5db; padding: 0.75rem; text-align: left; }
         #readable-text th { background-color: #dbeafe; font-weight: bold; color: #1e3a8a; }
@@ -157,17 +156,13 @@
             const listL = document.getElementById('list-large');
             const listM = document.getElementById('list-medium');
             const listS = document.getElementById('list-small');
-            
             listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
-            
             let setL = new Set(), setM = new Set(), setS = new Set();
             for (const L in studyData) {
                 setL.add(L);
                 for (const M in studyData[L]) {
                     setM.add(M);
-                    for (const S in studyData[L][M]) {
-                        setS.add(S);
-                    }
+                    for (const S in studyData[L][M]) { setS.add(S); }
                 }
             }
             setL.forEach(v => listL.appendChild(new Option(v)));
@@ -195,7 +190,6 @@
             selMedium.innerHTML = '<option value="">選択してください</option>';
             selSmall.innerHTML = '<option value="">中カテゴリを選んでください</option>';
             selSmall.disabled = true; selSmall.classList.add('bg-gray-100');
-
             if (L && studyData[L]) {
                 selMedium.disabled = false; selMedium.classList.remove('bg-gray-100');
                 for (const M in studyData[L]) {
@@ -207,10 +201,8 @@
         }
 
         function updateSmallDropdown() {
-            const L = selLarge.value;
-            const M = selMedium.value;
+            const L = selLarge.value; const M = selMedium.value;
             selSmall.innerHTML = '<option value="">選択してください</option>';
-
             if (L && M && studyData[L][M]) {
                 selSmall.disabled = false; selSmall.classList.remove('bg-gray-100');
                 for (const S in studyData[L][M]) {
@@ -229,7 +221,6 @@
             if (!studyData[large]) studyData[large] = {};
             if (!studyData[large][medium]) studyData[large][medium] = {};
             if (!studyData[large][medium][small]) studyData[large][medium][small] = [];
-
             studyData[large][medium][small].push(data);
             localStorage.setItem('studyDataTree', JSON.stringify(studyData));
             renderLargeDropdown();
@@ -238,7 +229,6 @@
         function deleteSelectedFolder() {
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("削除する小フォルダまで選択してください。");
-            
             if (confirm(`「${L} ＞ ${M} ＞ ${S}」のデータを全て削除してもよろしいですか？`)) {
                 delete studyData[L][M][S];
                 if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
@@ -264,6 +254,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // 文字サイズ変更
         function changeFontSize(sizeMode) {
             readableText.className = `text-gray-700 bg-gray-50 p-6 rounded-lg border text-size-${sizeMode}`;
         }
@@ -274,6 +265,7 @@
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts.length > 0) {
+                // 分割したページを太い線で繋いで見やすくします
                 readableText.innerHTML = extractedTexts.join('<br><hr class="my-6 border-2 border-purple-300"><br>');
                 textArea.classList.remove('hidden');
             }
@@ -322,16 +314,13 @@
         function loadSavedData() {
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
-
             const records = studyData[L][M][S];
             let allTexts = [], allQuestions = [];
-
             records.forEach(record => {
                 if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br>'));
                 const q = record.generated_questions || record.questions;
                 if (q) allQuestions = allQuestions.concat(q);
             });
-
             renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
         }
 
@@ -340,8 +329,7 @@
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
+                    const img = new Image(); img.src = event.target.result;
                     img.onload = () => {
                         let width = img.width, height = img.height;
                         if (width > maxWidth || height > maxWidth) {
@@ -350,8 +338,7 @@
                         }
                         const canvas = document.createElement('canvas');
                         canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                         canvas.toBlob((blob) => {
                             resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() }));
                         }, 'image/jpeg', 0.8);
@@ -373,6 +360,7 @@
             }
         });
 
+        // 🌟 【本物アップデート】分割ループ送信 ＆ 可視化機能 🌟
         extractBtn.addEventListener('click', async function() {
             if(!imageInput.files.length) {
                 alert("画像を選択してください！");
@@ -383,49 +371,94 @@
             const M = document.getElementById('folder-medium').value.trim();
             const S = document.getElementById('folder-small').value.trim();
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
-            const formData = new FormData();
             
-            extractBtn.textContent = "⚙️ 画像を準備中...";
             extractBtn.disabled = true;
             extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
 
+            // 写真を名前順（撮影順）にソート
             let filesArray = Array.from(imageInput.files);
             filesArray.sort((a, b) => a.name.localeCompare(b.name));
 
-            for(let i = 0; i < filesArray.length; i++){
-                const compressedFile = await compressImage(filesArray[i]);
-                formData.append("files", compressedFile);
+            // 設定された総問題数を、画像の枚数に応じて自動分配する計算
+            let totalQuestionsRequested = parseInt(questionCountInput.value);
+            let questionsPerFile = [];
+            for (let i = 0; i < filesArray.length; i++) {
+                if (mode === "workbook") {
+                    questionsPerFile.push(1); // 問題集モードは各画像1個としてカウント
+                } else {
+                    let q = Math.floor(totalQuestionsRequested / filesArray.length);
+                    if (i < (totalQuestionsRequested % filesArray.length)) { q += 1; }
+                    questionsPerFile.push(q);
+                }
             }
-            formData.append("mode", mode);
-            formData.append("num_questions", questionCountInput.value);
 
-            extractBtn.textContent = "⚙️ AIが解析・保存中（表作成中は少し時間がかかります）...";
+            // 分割データを集約するための変数
+            let combinedExtractedText = [];
+            let combinedQuestions = [];
 
             try {
-                const response = await fetch("/api/analyze", { method: "POST", body: formData });
-                if (!response.ok) {
-                    let errorMsg = "サーバーエラーが発生しました";
-                    try {
-                        const errData = await response.json();
-                        if (errData && errData.error) errorMsg = errData.error;
-                    } catch (e) {}
-                    throw new Error(errorMsg);
+                // 📸 画像を1枚ずつ順番に送信するループ処理
+                for (let i = 0; i < filesArray.length; i++) {
+                    const currentNum = i + 1;
+                    const totalNum = filesArray.length;
+
+                    // 画面のボタン表示をリアルタイムに更新（進捗の可視化）
+                    extractBtn.textContent = `⚙️ 画像を圧縮中... (${currentNum}/${totalNum}枚目)`;
+                    const compressedFile = await compressImage(filesArray[i]);
+
+                    extractBtn.textContent = `⚙️ AIが解析中... (${currentNum}/${totalNum}枚目)`;
+
+                    const formData = new FormData();
+                    formData.append("file", compressedFile); // 1枚ずつ送信
+                    formData.append("mode", mode);
+                    formData.append("num_questions", questionsPerFile[i]);
+
+                    const response = await fetch("/api/analyze", { method: "POST", body: formData });
+                    if (!response.ok) {
+                        let errorMsg = `${currentNum}枚目の解析でサーバーエラーが発生しました`;
+                        try {
+                            const errData = await response.json();
+                            if (errData && errData.error) errorMsg = errData.error;
+                        } catch (e) {}
+                        throw new Error(errorMsg);
+                    }
+
+                    const data = await response.json();
+
+                    // 抽出テキストを配列に回収
+                    if (data.extracted_text) {
+                        combinedExtractedText.push(data.extracted_text);
+                    }
+
+                    // 生成された問題を配列に合体
+                    const questions = data.generated_questions || data.questions;
+                    if (questions && questions.length > 0) {
+                        combinedQuestions = combinedQuestions.concat(questions);
+                    }
                 }
 
-                const data = await response.json();
-                saveToFolder(L, M, S, data);
+                // 🔄 すべての画像の解析が終わったら、1つの大きなデータとして統合
+                const finalCombinedData = {
+                    type: mode,
+                    extracted_text: combinedExtractedText.join("\n\n"),
+                    generated_questions: combinedQuestions
+                };
 
+                // フォルダに一括保存
+                saveToFolder(L, M, S, finalCombinedData);
+
+                // 画面に表示
                 let textArr = [];
-                if (data.extracted_text) textArr.push(data.extracted_text.replace(/\n/g, '<br>'));
-                const questions = data.generated_questions || data.questions;
-                
-                renderStudyPage(textArr, questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
+                if (finalCombinedData.extracted_text) {
+                    textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br>'));
+                }
+                renderStudyPage(textArr, finalCombinedData.generated_questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
 
                 imageInput.value = '';
                 fileNameDisplay.textContent = '';
 
             } catch (error) {
-                alert("解析に失敗しました。\n詳細: " + error.message);
+                alert("解析の途中で失敗しました。\n詳細: " + error.message);
             } finally {
                 extractBtn.textContent = "AIに送信して解析・保存スタート";
                 extractBtn.disabled = false;
@@ -440,14 +473,8 @@
                 return;
             }
             const range = selection.getRangeAt(0);
-            const span = document.createElement('span');
-            span.className = 'user-mark';
-            try {
-                range.surroundContents(span);
-                selection.removeAllRanges();
-            } catch (e) {
-                alert("改行などをまたいでマーカーを引くことはできません。");
-            }
+            const span = document.createElement('span'); span.className = 'user-mark';
+            try { range.surroundContents(span); selection.removeAllRanges(); } catch (e) {}
         });
     </script>
 </body>

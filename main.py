@@ -1,6 +1,5 @@
 import os
 import json
-from typing import List
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -32,25 +31,22 @@ client = genai.Client(api_key=API_KEY)
 async def serve_frontend():
     return FileResponse("index.html")
 
+# 【変更】1枚ずつ確実に処理するため、複数のListではなく単一の file を受け取る形に変更しました
 @app.post("/api/analyze")
-async def analyze_images(
-    files: List[UploadFile] = File(...),
+async def analyze_image(
+    file: UploadFile = File(...),
     mode: str = Form(...),
     num_questions: int = Form(3)
 ):
     try:
-        image_parts = []
-        for file in files:
-            data = await file.read()
-            image_parts.append(
-                types.Part.from_bytes(data=data, mime_type=file.content_type)
-            )
+        image_data = await file.read()
+        image_part = types.Part.from_bytes(data=image_data, mime_type=file.content_type)
         
         if mode == "workbook":
             prompt = f"""
             画像内の問題を読み取り、デジタルで解ける形式（選択式や穴埋め）に変換してください。
             写真の中に「表」や「グラフ」が含まれている場合は、HTMLの <table> タグを使用して見やすい表形式で解説に組み込んでください。
-            【重要】文字数制限を回避するため、table, tr, th, tdタグには class や style などの装飾属性を一切付けず、最もシンプルなタグのみを使用してください。
+            【重要】JSONエラーを防ぐため、table, tr, th, tdタグには class や style などの装飾属性を一切付けず、最もシンプルなタグのみを使用してください。
             正解と、詳細な理由・解説を含めてください。
             以下のJSON形式で出力してください。
             {{
@@ -69,9 +65,9 @@ async def analyze_images(
             prompt = f"""
             1. 画像の文章を抽出し、テストに出やすい重要語句を <mark class='ai-mark'>タグで囲んでください。
             2. 写真の中に「表」や「グラフ」が含まれている場合、絶対に無視せず、HTMLの <table> タグを使用して視覚的な表として抽出テキスト内に組み込んでください。
-               【最重要】文字数オーバーによるJSONエラーを確実に防ぐため、HTMLタグには class や style などの装飾属性を一切付けないでください。最もシンプルな <table><thead><tr><th>...</th></tr></thead><tbody><tr><td>...</td></tr></tbody></table> のみを使用してください。デザインは別の場所で自動付与されます。
+               【最重要】文字数オーバーによるJSONエラーを確実に防ぐため、HTMLタグには class や style などの装飾属性を一切付けないでください。最もシンプルな <table><thead><tr><th>...</th></tr></thead><tbody><tr><td>...</td></tr></tbody></table> のみを使用してください。
                ※グラフの場合は、目盛りから読み取れる数値を推測し、シンプルな表形式に変換して出力してください。
-            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。
+            3. その内容から、確認のためのオリジナル問題を{num_questions}問作成してください。もし指定された問題数が0の場合は、空の配列 [] にしてください。
             以下のJSON形式で出力してください。
             {{
                 "type": "textbook",
@@ -87,11 +83,9 @@ async def analyze_images(
             }}
             """
 
-        contents = [prompt] + image_parts
-
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=contents,
+            contents=[prompt, image_part],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 temperature=0.2,
@@ -107,7 +101,7 @@ async def analyze_images(
         
         raw_text = response.text
         if not raw_text:
-            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。別の画像をお試しください。"}, status_code=500)
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。"}, status_code=500)
 
         raw_text = raw_text.replace('```json', '').replace('```', '').strip()
         
@@ -115,7 +109,7 @@ async def analyze_images(
             parsed_data = json.loads(raw_text, strict=False)
             return JSONResponse(content=parsed_data)
         except json.JSONDecodeError:
-            return JSONResponse(content={"error": "AIが表や文章を生成する途中で文字数制限に達して切れてしまいました。写真に写る範囲（表や文字）を少し減らして、分けて読み込ませてみてください。"}, status_code=500)
+            return JSONResponse(content={"error": "AIの出力データが途中で切れてしまいました。画像の文字密度が高すぎる可能性があります。"}, status_code=500)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
