@@ -91,7 +91,7 @@
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500 flex flex-col">
-                <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去のデータから復習する</h2>
+                <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去のデータから復章する</h2>
                 <div class="space-y-4 mb-6 flex-grow">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">① 大カテゴリ</label>
@@ -175,9 +175,29 @@
                 if (response.ok) {
                     const serverData = await response.json();
                     if (serverData && Object.keys(serverData).length > 0) {
+                        // プルダウンの選択状態を維持するための退避
+                        const prevL = selLarge.value;
+                        const prevM = selMedium.value;
+                        const prevS = selSmall.value;
+
                         studyData = serverData;
+                        
+                        // データを反映してセレクトボックスを再構築
+                        renderLargeDropdown();
+
+                        // 選択状態の復元（他端末で削除されていない場合のみ）
+                        if (prevL && selLarge.querySelector(`option[value="${prevL}"]`)) {
+                            selLarge.value = prevL;
+                            updateMediumDropdown();
+                            if (prevM && selMedium.querySelector(`option[value="${prevM}"]`)) {
+                                selMedium.value = prevM;
+                                updateSmallDropdown();
+                                if (prevS && selSmall.querySelector(`option[value="${prevS}"]`)) {
+                                    selSmall.value = prevS;
+                                }
+                            }
+                        }
                     } else {
-                        // 【エスケープ処理済】 VSCodeが誤検知しないようにJS内の終了タグを無害化
                         studyData = {
                             "共通様式": {
                                 "国保連提出書類": {
@@ -205,12 +225,12 @@
                             }
                         };
                         await syncDataWithServer();
+                        renderLargeDropdown();
                     }
                 }
             } catch (e) {
-                console.error("サーバーからのデータ取得に失敗しました:", e);
+                print.error("サーバーからのデータ取得に失敗しました:", e);
             }
-            renderLargeDropdown();
         }
 
         function updateDataLists() {
@@ -277,8 +297,22 @@
             }
         }
 
+        // 【修正】 保存直前に一度サーバーから最新状態をロードして競合を防ぐ
         async function saveToFolder(large, medium, small, data) {
             large = large || '未分類'; medium = medium || '未分類'; small = small || '未分類';
+            
+            try {
+                const response = await fetch("/api/load-data");
+                if (response.ok) {
+                    const serverData = await response.json();
+                    if (serverData && Object.keys(serverData).length > 0) {
+                        studyData = serverData;
+                    }
+                }
+            } catch (e) {
+                console.error("保存前の最新データ取得に失敗しました。ローカルデータで続行します:", e);
+            }
+
             if (!studyData[large]) studyData[large] = {};
             if (!studyData[large][medium]) studyData[large][medium] = {};
             if (!studyData[large][medium][small]) studyData[large][medium][small] = [];
@@ -292,16 +326,29 @@
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("削除する小フォルダまで選択してください。");
             if (confirm(`「${L} ＞ ${M} ＞ ${S}」のデータを全て削除してもよろしいですか？`)) {
-                delete studyData[L][M][S];
-                if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
-                if (Object.keys(studyData[L]).length === 0) delete studyData[L];
-                
-                await syncDataWithServer();
+                try {
+                    const response = await fetch("/api/load-data");
+                    if (response.ok) {
+                        const serverData = await response.json();
+                        if (serverData && Object.keys(serverData).length > 0) studyData = serverData;
+                    }
+                } catch (e) {}
+
+                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) {
+                    delete studyData[L][M][S];
+                    if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
+                    if (Object.keys(studyData[L]).length === 0) delete studyData[L];
+                    await syncDataWithServer();
+                }
                 renderLargeDropdown();
             }
         }
 
+        // 初回ロード
         loadDataFromServer();
+
+        // 【新規】 30秒ごとに自動バックグラウンド同期（PC開きっぱなし対策）
+        setInterval(loadDataFromServer, 30000);
 
         const dashboardPage = document.getElementById('dashboard-page');
         const studyPage = document.getElementById('study-page');
@@ -311,14 +358,13 @@
         const quizContainer = document.getElementById('quiz-container');
         const currentFolderDisplay = document.getElementById('current-folder-display');
 
-        // 【新規】 読み上げ用の変数
         let isSpeaking = false;
         const ttsBtn = document.getElementById('tts-btn');
         const ttsIcon = document.getElementById('tts-icon');
         const ttsText = document.getElementById('tts-text');
 
+        // 【修正】 トップに戻る際、同時にサーバーの最新状態に同期する
         function returnToDashboard() {
-            // トップに戻る時は音声を強制ストップする
             window.speechSynthesis.cancel();
             isSpeaking = false;
             ttsIcon.textContent = '🔊';
@@ -329,6 +375,9 @@
             studyPage.classList.add('hidden');
             dashboardPage.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // ダッシュボードに戻ったタイミングで最新データを引き直す
+            loadDataFromServer();
         }
 
         function changeFontSize(sizeMode) {
@@ -429,7 +478,6 @@
         const extractBtn = document.getElementById('extract-btn');
         const questionCountInput = document.getElementById('question-count');
 
-        // 【修正】 選んだファイル名を画面上に一覧表示するように変更
         imageInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) {
                 const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>');
@@ -439,7 +487,6 @@
             }
         });
 
-        // 【新規】 読み上げボタンの処理
         ttsBtn.addEventListener('click', function() {
             if (isSpeaking) {
                 window.speechSynthesis.cancel();
@@ -449,7 +496,6 @@
                 ttsBtn.classList.replace('bg-red-500', 'bg-indigo-500');
                 ttsBtn.classList.replace('hover:bg-red-600', 'hover:bg-indigo-600');
             } else {
-                // innerTextを使うことでHTMLタグ（テーブルなど）を除いた純粋なテキストを取得
                 const textToSpeak = readableText.innerText;
                 if (!textToSpeak.trim()) {
                     alert("読み上げるテキストがありません。");
@@ -458,7 +504,7 @@
 
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
                 utterance.lang = 'ja-JP';
-                utterance.rate = 1.0; // 読み上げ速度
+                utterance.rate = 1.0;
 
                 utterance.onend = function() {
                     isSpeaking = false;
@@ -487,7 +533,6 @@
             const M = document.getElementById('folder-medium').value.trim();
             const S = document.getElementById('folder-small').value.trim();
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
-            const formData = new FormData();
             
             extractBtn.textContent = "⚙️ 画像を準備中...";
             extractBtn.disabled = true;
