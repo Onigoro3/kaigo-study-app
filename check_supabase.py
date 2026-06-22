@@ -21,10 +21,11 @@ try:
     print(f"接続先URL: {SUPABASE_URL}")
     print("====================================")
     
-    # 4. 簡単な通信テスト（テーブル一覧や接続状態の簡易確認）
-    # ※ここでは認証状態のオブジェクトが取得できるかを確認しています
-    auth_settings = supabase.auth.get_settings()
-    print("🎉 サーバーとの通信テストも正常に完了しました。")
+    # 4. 正しい通信テスト（先ほど作成した study_apps テーブルにアクセスしてみる）
+    response = supabase.table("study_apps").select("*").limit(1).execute()
+    
+    print("🎉 サーバーとの通信テスト（テーブルの確認）も正常に完了しました！")
+    print("Supabaseの準備はすべて完璧に整いました。")
     print("====================================")
 
 except Exception as e:
