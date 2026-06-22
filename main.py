@@ -1,15 +1,16 @@
 import os
 import json
-from typing import List
+from typing import List, Dict, Any
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
-# 【新規】構造化データ（設計図）を作成するためのライブラリ
 from pydantic import BaseModel
 import uvicorn
+# 【新規】Supabaseのインポート
+from supabase import create_client, Client
 
 load_dotenv()
 
@@ -24,15 +25,19 @@ app.add_middleware(
 )
 
 API_KEY = os.environ.get("GEMINI_API_KEY")
-
 if not API_KEY:
     raise ValueError("APIキーが設定されていません。.envファイルを確認してください。")
 
 client = genai.Client(api_key=API_KEY)
 
-# ==========================================
-# 🌟 【最重要】AIの出力を100%綺麗なJSONにするための設計図定義
-# ==========================================
+# 【新規】Supabaseクライアントの初期化設定
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+supabase_client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 class QuizQuestion(BaseModel):
     question_text: str
     options: List[str]
@@ -44,9 +49,37 @@ class StudyAnalyzeResponse(BaseModel):
     extracted_text: str
     generated_questions: List[QuizQuestion]
 
+# 【新規】データ受取用の形
+class SaveDataRequest(BaseModel):
+    data: Dict[str, Any]
+
 @app.get("/")
 async def serve_frontend():
     return FileResponse("index.html")
+
+# 【新規】Supabaseから全端末共通のデータを読み込む
+@app.get("/api/load-data")
+async def load_data():
+    if not supabase_client:
+        return JSONResponse(content={"error": "Supabase設定が見つかりません。"}, status_code=500)
+    try:
+        response = supabase_client.table("study_apps").select("data").eq("id", 1).execute()
+        if response.data and len(response.data) > 0:
+            return JSONResponse(content=response.data[0]["data"])
+        return JSONResponse(content={})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# 【新規】全端末共通のデータをSupabaseへ保存・上書きする
+@app.post("/api/save-data")
+async def save_data(req: SaveDataRequest):
+    if not supabase_client:
+        return JSONResponse(content={"error": "Supabase設定が見つかりません。"}, status_code=500)
+    try:
+        supabase_client.table("study_apps").upsert({"id": 1, "data": req.data}).execute()
+        return JSONResponse(content={"status": "success"})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/api/analyze")
 async def analyze_image(
@@ -73,13 +106,12 @@ async def analyze_image(
             3. その内容から、確認のためのオリジナル問題を{num_questions}問作成し、generated_questions に格納してください。
             """
 
-        # 🌟 response_schema を指定することで、AIは100%パース可能な綺麗なデータしか出せなくなります
         response = client.models.generate_content(
             model='gemini-2.5-pro',
             contents=[prompt, image_part],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=StudyAnalyzeResponse, # これがパースエラーを根本解決する魔法の設定です
+                response_schema=StudyAnalyzeResponse,
                 temperature=0.2,
                 max_output_tokens=8192,
                 safety_settings=[
@@ -93,9 +125,8 @@ async def analyze_image(
         
         raw_text = response.text
         if not raw_text:
-            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。別の画像をお試しください。"}, status_code=500)
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。"}, status_code=500)
 
-        # システムが成形を保証しているため、安全にパースして即座に画面へ返却できます
         parsed_data = json.loads(raw_text)
         return JSONResponse(content=parsed_data)
 
