@@ -150,7 +150,43 @@
     </div>
 
     <script>
-        let studyData = JSON.parse(localStorage.getItem('studyDataTree')) || {};
+        // --- 📂 3階層フォルダ管理 ＆ 【新規】初期様式データの自動注入（シード機能） ---
+        let studyData = JSON.parse(localStorage.getItem('studyDataTree'));
+
+        // アプリ起動時にデータが空だった場合、様式第二と様式第八を自動プリセット
+        if (!studyData || Object.keys(studyData).length === 0) {
+            studyData = {
+                "共通様式": {
+                    "国保連提出書類": {
+                        "様式第二（介護給付費明細書）": [{
+                            "type": "textbook",
+                            "extracted_text": "<h3>【様式第二：介護給付費明細書】の構造と必須記載ルール</h3><br>様式第二は、介護サービス事業所が国保連へ請求する最も重要な明細書です。<br><br><table><thead><tr><th>対象エリア</th><th>記載項目</th><th>テスト対策・実務の罠</th></tr></thead><tbody><tr><td>ヘッダー部</td><td>保険者番号・被保険者番号</td><td>市町村を跨ぐ転居時、旧番号での請求ミスが頻出。必ず現在の被保険者証を確認すること。</td></tr><tr><td>明細欄</td><td>サービスコード・単位数</td><td>サービスコードの「加算・減算算定要件」の根拠が一番狙われます。特に夜間・早朝加算の算定時間帯に注意。</td></tr><tr><td>集計部</td><td>請求額・利用者負担額</td><td>給付率（原則9割、所得により8割・7割）の掛け算ミスに注意。端数処理は『1円未満切り捨て』です。</td></tr></tbody></table>",
+                            "generated_questions": [
+                                {
+                                    "question_text": "様式第二における請求額および利用者負担額の計算で、端数（1円未満）が生じた場合の処理として正しいものはどれか。",
+                                    "options": ["四捨五入する", "切り上げる", "切り捨てる", "市町村の条例による"],
+                                    "answer": "切り捨てる",
+                                    "explanation": "介護報酬請求における金額計算の端数処理は、原則として「1円未満切り捨て」と法律で規定されています。"
+                                }
+                            ]
+                        }],
+                        "様式第八（居宅介護サービス計画費明細書）": [{
+                            "type": "textbook",
+                            "extracted_text": "<h3>【様式第八：居宅介護サービス計画費明細書】の構造と必須記載ルール</h3><br>様式第八は、居宅介護支援事業所（ケアマネジャー）が「ケアプラン作成費」を国保連へ100%給付請求するための書類です。<br><br><table><thead><tr><th>対象エリア</th><th>特有の記載ルール</th><th>実務・テストでのチェック要件</th></tr></thead><tbody><tr><td>給付率欄</td><td>常に「10割（100%）」</td><td>居宅介護支援（ケアプラン作成）は利用者負担がありません。ここを9割などと勘違いさせる引っ掛け問題が頻出します。</td></tr><tr><td>請求内容</td><td>事業所番号・基本単位数</td><td>居宅介護支援費Ⅰ・Ⅱの算定基準（ケアマネ1人あたりの担当件数による逓減制など）が問題の根拠になりやすいです。</td></tr></tbody></table>",
+                            "generated_questions": [
+                                {
+                                    "question_text": "様式第八（居宅介護サービス計画費明細書）において、保険給付率として指定される正しい割合はどれか。",
+                                    "options": ["7割", "8割", "9割", "10割"],
+                                    "answer": "10割",
+                                    "explanation": "居宅介護サービス計画費（ケアプラン作成費用）は、法定給付により利用者負担が免除されているため、常に「10割（全額保険給付）」となります。"
+                                }
+                            ]
+                        }]
+                    }
+                ]
+            };
+            localStorage.setItem('studyDataTree', JSON.stringify(studyData));
+        }
 
         function updateDataLists() {
             const listL = document.getElementById('list-large');
@@ -254,7 +290,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 文字サイズ変更
         function changeFontSize(sizeMode) {
             readableText.className = `text-gray-700 bg-gray-50 p-6 rounded-lg border text-size-${sizeMode}`;
         }
@@ -265,7 +300,6 @@
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts.length > 0) {
-                // 分割したページを太い線で繋いで見やすくします
                 readableText.innerHTML = extractedTexts.join('<br><hr class="my-6 border-2 border-purple-300"><br>');
                 textArea.classList.remove('hidden');
             }
@@ -360,7 +394,6 @@
             }
         });
 
-        // 🌟 【本物アップデート】分割ループ送信 ＆ 可視化機能 🌟
         extractBtn.addEventListener('click', async function() {
             if(!imageInput.files.length) {
                 alert("画像を選択してください！");
@@ -375,16 +408,14 @@
             extractBtn.disabled = true;
             extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
 
-            // 写真を名前順（撮影順）にソート
             let filesArray = Array.from(imageInput.files);
             filesArray.sort((a, b) => a.name.localeCompare(b.name));
 
-            // 設定された総問題数を、画像の枚数に応じて自動分配する計算
             let totalQuestionsRequested = parseInt(questionCountInput.value);
             let questionsPerFile = [];
             for (let i = 0; i < filesArray.length; i++) {
                 if (mode === "workbook") {
-                    questionsPerFile.push(1); // 問題集モードは各画像1個としてカウント
+                    questionsPerFile.push(1);
                 } else {
                     let q = Math.floor(totalQuestionsRequested / filesArray.length);
                     if (i < (totalQuestionsRequested % filesArray.length)) { q += 1; }
@@ -392,24 +423,21 @@
                 }
             }
 
-            // 分割データを集約するための変数
             let combinedExtractedText = [];
             let combinedQuestions = [];
 
             try {
-                // 📸 画像を1枚ずつ順番に送信するループ処理
                 for (let i = 0; i < filesArray.length; i++) {
                     const currentNum = i + 1;
                     const totalNum = filesArray.length;
 
-                    // 画面のボタン表示をリアルタイムに更新（進捗の可視化）
                     extractBtn.textContent = `⚙️ 画像を圧縮中... (${currentNum}/${totalNum}枚目)`;
                     const compressedFile = await compressImage(filesArray[i]);
 
                     extractBtn.textContent = `⚙️ AIが解析中... (${currentNum}/${totalNum}枚目)`;
 
                     const formData = new FormData();
-                    formData.append("file", compressedFile); // 1枚ずつ送信
+                    formData.append("file", compressedFile);
                     formData.append("mode", mode);
                     formData.append("num_questions", questionsPerFile[i]);
 
@@ -424,34 +452,21 @@
                     }
 
                     const data = await response.json();
-
-                    // 抽出テキストを配列に回収
-                    if (data.extracted_text) {
-                        combinedExtractedText.push(data.extracted_text);
-                    }
-
-                    // 生成された問題を配列に合体
+                    if (data.extracted_text) combinedExtractedText.push(data.extracted_text);
                     const questions = data.generated_questions || data.questions;
-                    if (questions && questions.length > 0) {
-                        combinedQuestions = combinedQuestions.concat(questions);
-                    }
+                    if (questions && questions.length > 0) combinedQuestions = combinedQuestions.concat(questions);
                 }
 
-                // 🔄 すべての画像の解析が終わったら、1つの大きなデータとして統合
                 const finalCombinedData = {
                     type: mode,
                     extracted_text: combinedExtractedText.join("\n\n"),
                     generated_questions: combinedQuestions
                 };
 
-                // フォルダに一括保存
                 saveToFolder(L, M, S, finalCombinedData);
 
-                // 画面に表示
                 let textArr = [];
-                if (finalCombinedData.extracted_text) {
-                    textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br>'));
-                }
+                if (finalCombinedData.extracted_text) textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br>'));
                 renderStudyPage(textArr, finalCombinedData.generated_questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
 
                 imageInput.value = '';
