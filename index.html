@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI学習ナビゲーター</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         .ai-mark { background-color: #fef08a; padding: 0 4px; border-radius: 2px; font-weight: bold; }
         .user-mark { background-color: #fbcfe8; padding: 0 4px; border-radius: 2px; }
@@ -22,33 +23,77 @@
 
         select optgroup { font-weight: bold; color: #4338ca; background-color: #e0e7ff; }
         select option { color: #1f2937; background-color: #ffffff; font-weight: normal; }
+
+        /* 本棚の本の背表紙デザイン */
+        .book-cover {
+            box-shadow: -4px 0 10px rgba(0,0,0,0.1) inset, 2px 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .book-cover:active { transform: scale(0.95); }
+        .book-spine {
+            position: absolute; top: 0; bottom: 0; left: 0; width: 10px;
+            background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(0,0,0,0.1));
+            border-radius: 4px 0 0 4px;
+        }
+        
+        /* ドラッグ中の見た目 */
+        .sortable-ghost { opacity: 0.4; background-color: #f3f4f6; }
+        .sortable-drag { cursor: grabbing !important; }
+        .grab-handle { cursor: grab; }
+        .grab-handle:active { cursor: grabbing; }
+
+        /* タブを切り替えたときのアニメーション */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-50 font-sans leading-normal tracking-normal pb-10">
+<body class="bg-gray-100 font-sans leading-normal tracking-normal pb-20">
 
-    <nav class="bg-blue-600 p-4 shadow-md sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <a class="text-white text-xl font-bold" href="#">📚 AI学習ナビゲーター</a>
+    <nav class="bg-blue-600 p-4 shadow-md sticky top-0 z-40">
+        <div class="container mx-auto flex justify-center items-center">
+            <a class="text-white text-xl font-bold tracking-wider" href="#">📚 AI学習ナビ</a>
         </div>
     </nav>
 
-    <div class="container mx-auto px-4 py-8">
-        
-        <div id="dashboard-page" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
-                <h2 class="text-xl font-bold mb-4 text-gray-700">📥 新しい学習データの追加</h2>
+    <div class="container mx-auto px-4 py-6">
+
+        <div id="bookshelf-tab" class="fade-in">
+            
+            <div id="large-grid-view">
+                <div class="flex justify-between items-end mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">📖 わたしの本棚</h2>
+                    <span class="text-xs text-gray-500">長押しで並び替え</span>
+                </div>
+                <div id="bookshelf-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 sm:gap-6"></div>
+            </div>
+
+            <div id="folder-list-view" class="hidden fade-in">
+                <div class="flex items-center mb-6 border-b pb-4">
+                    <button onclick="showBookshelfGrid()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm mr-4 flex items-center transition">
+                        <span class="mr-1">←</span> 戻る
+                    </button>
+                    <h2 id="current-book-title" class="text-xl sm:text-2xl font-bold text-gray-800 truncate"></h2>
+                </div>
+                <p class="text-xs text-gray-500 mb-4 text-right">長押しで並び替え可能</p>
+                <div id="medium-list-container" class="space-y-6"></div>
+            </div>
+        </div>
+
+        <div id="add-data-tab" class="hidden fade-in">
+            <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">📥 新しい学習データの追加</h2>
                 
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-2">読み込む種類</label>
                     <div class="flex space-x-4">
-                        <label class="flex items-center cursor-pointer"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked /> 教科書</label>
-                        <label class="flex items-center cursor-pointer"><input type="radio" name="scan-mode" value="workbook" class="mr-2" /> 問題集</label>
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked /> 教科書</label>
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="workbook" class="mr-2" /> 問題集</label>
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-2">生成する問題数（教科書モード時）</label>
-                    <select id="question-count" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-blue-500 bg-white">
+                    <select id="question-count" class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                         <option value="3">3問（サクッと）</option>
                         <option value="5">5問（標準）</option>
                         <option value="7">7問（しっかり）</option>
@@ -60,18 +105,18 @@
                     <label class="block text-sm font-bold text-gray-700 mb-3">📁 保存先フォルダ</label>
                     <div class="space-y-3">
                         <div>
-                            <span class="text-xs text-blue-800 font-bold">大カテゴリ</span>
-                            <input type="text" id="folder-large" list="list-large" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護、IT、語学" />
+                            <span class="text-xs text-blue-800 font-bold">大カテゴリ（本）</span>
+                            <input type="text" id="folder-large" list="list-large" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="例: 介護、IT、語学" />
                             <datalist id="list-large"></datalist>
                         </div>
                         <div>
-                            <span class="text-xs text-blue-800 font-bold">中カテゴリ</span>
-                            <input type="text" id="folder-medium" list="list-medium" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 介護保険、Python、英語" />
+                            <span class="text-xs text-blue-800 font-bold">中カテゴリ（章）</span>
+                            <input type="text" id="folder-medium" list="list-medium" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="例: 介護保険、Python、英語" />
                             <datalist id="list-medium"></datalist>
                         </div>
                         <div>
-                            <span class="text-xs text-blue-800 font-bold">小フォルダ（セクション）</span>
-                            <input type="text" id="folder-small" list="list-small" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-blue-500" placeholder="例: 1-1 居宅介護支援費" />
+                            <span class="text-xs text-blue-800 font-bold">小フォルダ（節）</span>
+                            <input type="text" id="folder-small" list="list-small" class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="例: 1-1 居宅介護支援費" />
                             <datalist id="list-small"></datalist>
                         </div>
                     </div>
@@ -81,75 +126,29 @@
                     <div class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition overflow-hidden">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                             <p class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
-                            <p class="text-xs text-gray-500 mt-1">選んだ写真は自動的に撮影順に並んで解析されます</p>
                         </div>
                         <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" multiple />
                     </div>
                     <div id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 min-h-[1rem]"></div>
                 </div>
                 
-                <button id="extract-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow transition duration-200">
+                <button id="extract-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200">
                     AIに送信して解析・保存スタート
                 </button>
             </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500 flex flex-col">
-                <h2 class="text-xl font-bold mb-4 text-gray-700">🎯 過去のデータから復習する</h2>
-                <div class="space-y-4 mb-6 flex-grow">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">① 大カテゴリ</label>
-                        <select id="select-large" onchange="updateMediumDropdown()" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-white"></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">② 中カテゴリ</label>
-                        <select id="select-medium" onchange="updateSmallDropdown()" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-gray-100" disabled></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">③ 小フォルダ</label>
-                        <select id="select-small" class="w-full border-2 border-gray-300 rounded p-2 focus:border-green-500 bg-gray-100" disabled></select>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <button onclick="loadSavedData()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded shadow transition">
-                        保存されている問題で復習する
-                    </button>
-                    
-                    <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg shadow-sm">
-                        <label class="block text-xs font-bold text-green-800 mb-2">✨ 登録済みのテキストから新しく問題を作る</label>
-                        <div class="flex space-x-2">
-                            <select id="review-question-count" class="border border-green-300 rounded p-2 focus:border-green-500 bg-white text-sm flex-grow">
-                                <option value="3">3問（サクッと）</option>
-                                <option value="5">5問（標準）</option>
-                                <option value="7">7問（しっかり）</option>
-                                <option value="10">10問（がっつり）</option>
-                            </select>
-                            <button onclick="generateNewQuizFromSavedData()" id="generate-review-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition text-sm">
-                                新しく作る
-                            </button>
-                        </div>
-                    </div>
-
-                    <button onclick="deleteSelectedFolder()" class="w-full mt-4 bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-4 rounded transition">
-                        選択した小フォルダを削除
-                    </button>
-                </div>
-            </div>
         </div>
 
-        <div id="study-page" class="hidden">
+        <div id="study-page" class="hidden fade-in">
             <div class="flex justify-between items-center mb-6">
-                <button onclick="returnToDashboard()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow flex items-center transition">
-                    <span class="mr-2">←</span> トップへ戻る
+                <button onclick="closeStudyPage()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 sm:px-6 rounded-lg shadow flex items-center transition">
+                    <span class="mr-2">←</span> 戻る
                 </button>
-                <span id="current-folder-display" class="font-bold text-blue-800 bg-blue-100 py-1 px-3 rounded-full text-sm truncate max-w-[200px] sm:max-w-xs"></span>
+                <span id="current-folder-display" class="font-bold text-blue-800 bg-blue-100 py-1 px-3 rounded-full text-xs sm:text-sm truncate max-w-[150px] sm:max-w-xs"></span>
             </div>
 
-            <div id="text-area" class="hidden bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-purple-500 mb-8 overflow-x-auto">
-                
+            <div id="text-area" class="hidden bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-xl border-t-4 border-purple-500 mb-8 overflow-x-auto">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4 gap-4">
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-800 whitespace-nowrap">📄 読み取りテキスト</h2>
-                    
                     <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                         <select onchange="changeFontSize(this.value)" class="bg-white border border-gray-300 text-gray-700 text-sm py-2 px-2 rounded-lg shadow-sm focus:outline-none focus:border-blue-500">
                             <option value="xsmall">文字: 極小</option>
@@ -158,7 +157,6 @@
                             <option value="large">文字: 大</option>
                             <option value="xlarge">文字: 特大</option>
                         </select>
-                        
                         <div id="tts-player-container" class="flex items-center bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm overflow-hidden">
                             <select id="tts-mode" class="bg-transparent text-indigo-700 text-sm py-2 px-2 focus:outline-none max-w-[140px] sm:max-w-[200px] border-r border-indigo-200 cursor-pointer">
                                 <option value="all">すべて読上</option>
@@ -167,84 +165,385 @@
                                 <span id="tts-icon">🔊</span><span id="tts-text" class="ml-1 hidden sm:inline">再生</span>
                             </button>
                         </div>
-
                         <button id="highlight-btn" class="bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 font-bold py-2 px-3 rounded-lg shadow-sm flex items-center transition text-sm">
                             🖋 <span class="ml-1 hidden sm:inline">マーカー</span>
                         </button>
                     </div>
                 </div>
-
                 <div id="readable-text" class="text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-normal"></div>
             </div>
 
-            <div id="quiz-area" class="hidden bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-xl border-t-4 border-yellow-400">
+            <div id="quiz-area" class="hidden bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-xl border-t-4 border-yellow-400 mb-10">
                 <h2 class="text-xl sm:text-2xl font-bold mb-6 text-gray-800 border-b pb-2">✨ 問題</h2>
                 <div id="quiz-container" class="space-y-6"></div>
             </div>
         </div>
+
     </div>
 
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="switchTab('bookshelf')" id="nav-bookshelf" class="flex flex-col items-center justify-center w-full h-full text-blue-600 transition">
+                <span class="text-2xl mb-1">📚</span>
+                <span class="text-[10px] font-bold">本棚</span>
+            </button>
+            <button onclick="switchTab('add-data')" id="nav-add-data" class="flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
+                <span class="text-2xl mb-1">📸</span>
+                <span class="text-[10px] font-bold">スキャン</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="action-modal" class="fixed inset-0 bg-black/50 z-[60] hidden flex-col justify-end">
+        <div class="bg-white rounded-t-2xl p-6 w-full max-w-md mx-auto transform transition-transform translate-y-full" id="action-modal-content">
+            <h3 id="modal-folder-title" class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 truncate"></h3>
+            
+            <div class="space-y-3">
+                <button onclick="startStudyNormal()" class="w-full flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                    <span class="text-xl mr-3">📖</span>
+                    <span class="font-bold text-blue-800">保存されているデータで学習する</span>
+                </button>
+                
+                <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        <span class="text-xl mr-3">✨</span>
+                        <span class="font-bold text-green-800">AIに新しく問題を作らせる</span>
+                    </div>
+                    <div class="flex space-x-2 pl-8">
+                        <select id="modal-question-count" class="border border-green-300 rounded py-1 px-2 text-sm flex-grow">
+                            <option value="3">3問</option><option value="5">5問</option><option value="7">7問</option><option value="10">10問</option>
+                        </select>
+                        <button onclick="startStudyGenerate()" id="modal-generate-btn" class="bg-green-600 text-white font-bold py-1 px-4 rounded text-sm hover:bg-green-700">作成</button>
+                    </div>
+                </div>
+
+                <button onclick="confirmDeleteFolder()" class="w-full flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition mt-4">
+                    <span class="text-xl mr-3">🗑️</span>
+                    <span class="font-bold text-red-700">この小フォルダを削除する</span>
+                </button>
+            </div>
+            <button onclick="closeActionModal()" class="w-full mt-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg">キャンセル</button>
+        </div>
+    </div>
+
+
     <script>
+        // ==========================================
+        // 状態管理と初期化
+        // ==========================================
         let studyData = {};
-        
+        let currentLargeFolder = null; // 現在開いている本の名前
+        let selectedSmallPath = null; // モーダルで選択したL, M, Sのパス
+
         window.currentTtsChunks = [];
         let isSpeaking = false;
         let ttsQueue = []; 
 
+        let sortableBookshelf = null;
+        let sortableMediums = null;
+        let sortableSmalls = [];
+
+        // 文字列から色を生成（本棚のカバー色）
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            const h = hash % 360;
+            return `hsl(${h}, 70%, 55%)`; // 鮮やかで見やすい色
+        }
+
+        // オブジェクトのキー順序を並び替えて新しいオブジェクトを返す
+        function reorderObjectKeys(obj, newKeys) {
+            const newObj = {};
+            newKeys.forEach(k => {
+                if (obj.hasOwnProperty(k)) newObj[k] = obj[k];
+            });
+            return newObj;
+        }
+
+        // ==========================================
+        // タブ・画面切り替え UI制御
+        // ==========================================
+        function switchTab(tabName) {
+            document.getElementById('bookshelf-tab').classList.add('hidden');
+            document.getElementById('add-data-tab').classList.add('hidden');
+            document.getElementById('study-page').classList.add('hidden');
+
+            document.getElementById('nav-bookshelf').classList.replace('text-blue-600', 'text-gray-400');
+            document.getElementById('nav-add-data').classList.replace('text-blue-600', 'text-gray-400');
+
+            if (tabName === 'bookshelf') {
+                document.getElementById('bookshelf-tab').classList.remove('hidden');
+                document.getElementById('nav-bookshelf').classList.replace('text-gray-400', 'text-blue-600');
+                if (!currentLargeFolder) showBookshelfGrid(); 
+            } else {
+                document.getElementById('add-data-tab').classList.remove('hidden');
+                document.getElementById('nav-add-data').classList.replace('text-gray-400', 'text-blue-600');
+                updateDataLists(); // Datalist更新
+            }
+            window.scrollTo(0, 0);
+        }
+
+        // 本棚グリッドを表示
+        function showBookshelfGrid() {
+            currentLargeFolder = null;
+            document.getElementById('large-grid-view').classList.remove('hidden');
+            document.getElementById('folder-list-view').classList.add('hidden');
+            renderBookshelfGrid();
+        }
+
+        // 本を開く（リスト表示）
+        function openBook(largeFolderName) {
+            currentLargeFolder = largeFolderName;
+            document.getElementById('large-grid-view').classList.add('hidden');
+            document.getElementById('folder-list-view').classList.remove('hidden');
+            document.getElementById('current-book-title').textContent = `📖 ${largeFolderName}`;
+            renderFolderList();
+        }
+
+        function closeStudyPage() {
+            stopTtsPlayback();
+            switchTab('bookshelf');
+        }
+
+        // ==========================================
+        // レンダリング（本棚・リスト）
+        // ==========================================
+        function renderBookshelfGrid() {
+            const grid = document.getElementById('bookshelf-grid');
+            grid.innerHTML = '';
+            
+            const largeFolders = Object.keys(studyData);
+            if (largeFolders.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>スキャンから追加してください。</div>';
+                return;
+            }
+
+            largeFolders.forEach(L => {
+                const color = stringToColor(L);
+                const bookHTML = `
+                    <div data-key="${L}" class="book-cover aspect-[2/3] rounded-r-md flex items-center justify-center p-3 cursor-pointer relative grab-handle" style="background: linear-gradient(135deg, ${color}, #3b82f6);" onclick="openBook('${L}')">
+                        <div class="book-spine"></div>
+                        <span class="text-white font-bold text-center drop-shadow-md text-sm sm:text-base break-words w-full px-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">${L}</span>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', bookHTML);
+            });
+
+            if (sortableBookshelf) sortableBookshelf.destroy();
+            sortableBookshelf = new Sortable(grid, {
+                animation: 150,
+                delay: 200, // 長押し判定（スマホ用）
+                delayOnTouchOnly: true,
+                onEnd: async function () {
+                    const newOrder = Array.from(grid.children).map(el => el.getAttribute('data-key'));
+                    studyData = reorderObjectKeys(studyData, newOrder);
+                    await syncDataWithServer();
+                }
+            });
+        }
+
+        function renderFolderList() {
+            const container = document.getElementById('medium-list-container');
+            container.innerHTML = '';
+            
+            if (!studyData[currentLargeFolder]) return;
+
+            const mediumFolders = Object.keys(studyData[currentLargeFolder]);
+            if (mediumFolders.length === 0) {
+                container.innerHTML = '<p class="text-gray-400">データがありません</p>';
+                return;
+            }
+
+            mediumFolders.forEach(M => {
+                let smallHTML = '';
+                const smallFolders = Object.keys(studyData[currentLargeFolder][M] || {});
+                
+                smallFolders.forEach(S => {
+                    smallHTML += `
+                        <div data-s-key="${S}" onclick="openActionModal('${currentLargeFolder}', '${M}', '${S}')" class="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-blue-50 transition shadow-sm grab-handle">
+                            <span class="font-bold text-gray-700 text-sm sm:text-base">📄 ${S}</span>
+                            <span class="text-xs text-blue-500 font-bold bg-blue-100 px-2 py-1 rounded">学習</span>
+                        </div>
+                    `;
+                });
+
+                const mediumHTML = `
+                    <div data-m-key="${M}" class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-300 shadow-sm">
+                        <div class="flex items-center mb-3 grab-handle">
+                            <span class="text-gray-400 mr-2 text-xl">≡</span>
+                            <h3 class="font-bold text-lg sm:text-xl text-indigo-900">📁 ${M}</h3>
+                        </div>
+                        <div class="small-list-container space-y-2 pl-2 sm:pl-4" data-parent-m="${M}">
+                            ${smallHTML}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', mediumHTML);
+            });
+
+            // 中フォルダのSortable
+            if (sortableMediums) sortableMediums.destroy();
+            sortableMediums = new Sortable(container, {
+                animation: 150,
+                handle: '.grab-handle',
+                delay: 200, delayOnTouchOnly: true,
+                onEnd: async function () {
+                    const newOrder = Array.from(container.children).map(el => el.getAttribute('data-m-key'));
+                    studyData[currentLargeFolder] = reorderObjectKeys(studyData[currentLargeFolder], newOrder);
+                    await syncDataWithServer();
+                }
+            });
+
+            // 小フォルダのSortable（中フォルダごとに設定）
+            sortableSmalls.forEach(s => s.destroy());
+            sortableSmalls = [];
+            document.querySelectorAll('.small-list-container').forEach(listEl => {
+                const parentM = listEl.getAttribute('data-parent-m');
+                const s = new Sortable(listEl, {
+                    animation: 150,
+                    delay: 200, delayOnTouchOnly: true,
+                    onEnd: async function () {
+                        const newOrder = Array.from(listEl.children).map(el => el.getAttribute('data-s-key'));
+                        studyData[currentLargeFolder][parentM] = reorderObjectKeys(studyData[currentLargeFolder][parentM], newOrder);
+                        await syncDataWithServer();
+                    }
+                });
+                sortableSmalls.push(s);
+            });
+        }
+
+        // ==========================================
+        // アクションモーダル（メニュー）
+        // ==========================================
+        function openActionModal(L, M, S) {
+            selectedSmallPath = { L, M, S };
+            document.getElementById('modal-folder-title').textContent = `📄 ${S}`;
+            const modal = document.getElementById('action-modal');
+            const content = document.getElementById('action-modal-content');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { content.classList.remove('translate-y-full'); }, 10);
+        }
+
+        function closeActionModal() {
+            const modal = document.getElementById('action-modal');
+            const content = document.getElementById('action-modal-content');
+            content.classList.add('translate-y-full');
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex');
+                selectedSmallPath = null;
+            }, 300);
+        }
+
+        // 通常学習スタート
+        function startStudyNormal() {
+            const { L, M, S } = selectedSmallPath;
+            closeActionModal();
+            const records = studyData[L][M][S];
+            let allTexts = [], allQuestions = [];
+            records.forEach(r => {
+                if (r.extracted_text) allTexts.push(r.extracted_text.replace(/\n/g, '<br />'));
+                if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions);
+                if (r.questions) allQuestions = allQuestions.concat(r.questions);
+            });
+            renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
+        }
+
+        // 新規作成スタート
+        async function startStudyGenerate() {
+            const { L, M, S } = selectedSmallPath;
+            const records = studyData[L][M][S];
+            let allTexts = [];
+            records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); });
+            const combinedText = allTexts.join("\n\n");
+            
+            if (!combinedText.trim()) {
+                alert("テキストデータがないため、新しい問題は作成できません。");
+                return;
+            }
+
+            const count = document.getElementById('modal-question-count').value;
+            const btn = document.getElementById('modal-generate-btn');
+            btn.textContent = "処理中..."; btn.disabled = true;
+
+            try {
+                const response = await fetch("/api/generate-quiz", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: combinedText, num_questions: parseInt(count) })
+                });
+                if (!response.ok) throw new Error("問題の生成に失敗しました");
+                const data = await response.json();
+                
+                closeActionModal();
+                let formattedTexts = allTexts.map(t => t.replace(/\n/g, '<br />'));
+                renderStudyPage(formattedTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`);
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.textContent = "作成"; btn.disabled = false;
+            }
+        }
+
+        // 削除処理
+        async function confirmDeleteFolder() {
+            const { L, M, S } = selectedSmallPath;
+            if (confirm(`「${S}」のデータを全て削除しますか？`)) {
+                closeActionModal();
+                const latestData = await fetchLatestData();
+                if (latestData) studyData = latestData;
+
+                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) {
+                    delete studyData[L][M][S];
+                    if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
+                    if (Object.keys(studyData[L]).length === 0) {
+                        delete studyData[L];
+                        await syncDataWithServer();
+                        showBookshelfGrid(); // 本がなくなったので本棚へ戻る
+                        return;
+                    }
+                    await syncDataWithServer();
+                }
+                renderFolderList(); // リスト再描画
+            }
+        }
+
+        // ==========================================
+        // サーバー通信・データ管理
+        // ==========================================
         async function fetchLatestData() {
             try {
                 const url = "/api/load-data?t=" + new Date().getTime();
                 const response = await fetch(url, { cache: 'no-store' });
                 if (response.ok) {
-                    const serverData = await response.json();
-                    if (serverData && Object.keys(serverData).length > 0) {
-                        return serverData;
-                    }
+                    const d = await response.json();
+                    if (d && Object.keys(d).length > 0) return d;
                 }
-            } catch (e) {
-                console.error("最新データの取得に失敗しました:", e);
-            }
-            return null;
+            } catch (e) {} return null;
         }
 
         async function syncDataWithServer() {
             try {
                 const response = await fetch("/api/save-data", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ data: studyData })
                 });
-                
-                if (!response.ok) {
-                    const err = await response.json();
-                    alert("⚠️ データベースへの保存に失敗しました！\n詳細: " + (err.error || "不明なエラー"));
-                    return false;
-                }
+                if (!response.ok) { alert("⚠️ 保存失敗"); return false; }
                 return true;
-            } catch (e) {
-                alert("⚠️ サーバーとの通信エラーが発生しました。\n詳細: " + e.message);
-                return false;
-            }
+            } catch (e) { alert("⚠️ 通信エラー"); return false; }
         }
 
         async function loadDataFromServer() {
             const latestData = await fetchLatestData();
             if (latestData) {
-                const prevL = selLarge.value, prevM = selMedium.value, prevS = selSmall.value;
                 studyData = latestData;
-                renderLargeDropdown();
-                if (prevL && selLarge.querySelector(`option[value="${prevL}"]`)) {
-                    selLarge.value = prevL;
-                    updateMediumDropdown();
-                    if (prevM && selMedium.querySelector(`option[value="${prevM}"]`)) {
-                        selMedium.value = prevM;
-                        updateSmallDropdown();
-                        if (prevS && selSmall.querySelector(`option[value="${prevS}"]`)) selSmall.value = prevS;
-                    }
+                
+                // 現在の画面状態に応じて再描画
+                if (!document.getElementById('bookshelf-tab').classList.contains('hidden')) {
+                    if (currentLargeFolder) renderFolderList();
+                    else renderBookshelfGrid();
                 }
-            } else if (Object.keys(studyData).length === 0) {
-                studyData = {};
-                renderLargeDropdown();
             }
         }
 
@@ -264,45 +563,6 @@
             setS.forEach(v => listS.appendChild(new Option(v)));
         }
 
-        const selLarge = document.getElementById('select-large');
-        const selMedium = document.getElementById('select-medium');
-        const selSmall = document.getElementById('select-small');
-
-        function renderLargeDropdown() {
-            selLarge.innerHTML = '<option value="">選択してください</option>';
-            for (const L in studyData) {
-                const opt = document.createElement('option'); opt.value = L; opt.textContent = L; selLarge.appendChild(opt);
-            }
-            updateMediumDropdown(); updateDataLists();
-        }
-
-        function updateMediumDropdown() {
-            const L = selLarge.value;
-            selMedium.innerHTML = '<option value="">選択してください</option>';
-            selSmall.innerHTML = '<option value="">中カテゴリを選んでください</option>';
-            selSmall.disabled = true; selSmall.classList.add('bg-gray-100');
-            if (L && studyData[L]) {
-                selMedium.disabled = false; selMedium.classList.remove('bg-gray-100');
-                for (const M in studyData[L]) {
-                    const opt = document.createElement('option'); opt.value = M; opt.textContent = M; selMedium.appendChild(opt);
-                }
-            }
-        }
-
-        function updateSmallDropdown() {
-            const L = selLarge.value, M = selMedium.value;
-            selSmall.innerHTML = '<option value="">選択してください</option>';
-            if (L && M && studyData[L] && studyData[L][M]) {
-                selSmall.disabled = false; selSmall.classList.remove('bg-gray-100');
-                for (const S in studyData[L][M]) {
-                    const count = studyData[L][M][S].length;
-                    const opt = document.createElement('option'); opt.value = S; opt.textContent = `${S} (${count}件の記録)`; selSmall.appendChild(opt);
-                }
-            } else {
-                selSmall.disabled = true; selSmall.classList.add('bg-gray-100');
-            }
-        }
-
         async function saveToFolder(large, medium, small, data) {
             large = large || '未分類'; medium = medium || '未分類'; small = small || '未分類';
             const latestData = await fetchLatestData();
@@ -314,122 +574,28 @@
             studyData[large][medium][small].push(data);
             
             await syncDataWithServer();
-            renderLargeDropdown();
+            // 自動的にスキャンタブから本棚へ遷移して表示
+            switchTab('bookshelf');
+            openBook(large);
         }
 
-        async function deleteSelectedFolder() {
-            const L = selLarge.value, M = selMedium.value, S = selSmall.value;
-            if (!L || !M || !S) return alert("削除する小フォルダまで選択してください。");
-            if (confirm(`「${L} ＞ ${M} ＞ ${S}」のデータを全て削除してもよろしいですか？`)) {
-                const latestData = await fetchLatestData();
-                if (latestData) studyData = latestData;
-
-                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) {
-                    delete studyData[L][M][S];
-                    if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
-                    if (Object.keys(studyData[L]).length === 0) delete studyData[L];
-                    await syncDataWithServer();
-                }
-                renderLargeDropdown();
-            }
-        }
-
+        // 初期ロード
         loadDataFromServer();
         setInterval(loadDataFromServer, 30000);
 
-        const dashboardPage = document.getElementById('dashboard-page');
-        const studyPage = document.getElementById('study-page');
-        const textArea = document.getElementById('text-area');
-        const readableText = document.getElementById('readable-text');
-        const quizArea = document.getElementById('quiz-area');
-        const quizContainer = document.getElementById('quiz-container');
-        const currentFolderDisplay = document.getElementById('current-folder-display');
-
-        const ttsBtn = document.getElementById('tts-btn');
-        const ttsIcon = document.getElementById('tts-icon');
-        const ttsText = document.getElementById('tts-text');
-        const ttsModeSelect = document.getElementById('tts-mode');
-        const ttsPlayerContainer = document.getElementById('tts-player-container');
-
-        function returnToDashboard() {
-            stopTtsPlayback();
-            studyPage.classList.add('hidden');
-            dashboardPage.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            loadDataFromServer();
-        }
-
-        function changeFontSize(sizeMode) {
-            readableText.className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`;
-        }
-
-        function renderStudyPage(extractedTexts, questions, folderPathStr) {
-            textArea.classList.add('hidden'); quizArea.classList.add('hidden');
-            quizContainer.innerHTML = '';
-            currentFolderDisplay.textContent = folderPathStr;
-
-            if (extractedTexts.length > 0) {
-                readableText.innerHTML = extractedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
-                textArea.classList.remove('hidden');
-                buildTtsChunksAndUI();
-            }
-
-            if (questions && questions.length > 0) {
-                questions.forEach((q, index) => {
-                    let optionsHtml = '';
-                    if (q.options && q.options.length > 0) {
-                        optionsHtml = '<div class="space-y-2 mt-4">';
-                        q.options.forEach((opt) => {
-                            optionsHtml += `
-                                <label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-base sm:text-lg">
-                                    <input type="radio" name="q${index}" class="mr-2" /> ${opt}
-                                </label>
-                            `;
-                        });
-                        optionsHtml += '</div>';
-                    } else {
-                        optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-base sm:text-lg" placeholder="解答を入力" />`;
-                    }
-
-                    const questionBlock = `
-                        <div class="p-4 bg-gray-50 rounded-lg border">
-                            <h3 class="font-bold text-base sm:text-lg text-blue-900 leading-relaxed">Q${index + 1}. ${q.question_text}</h3>
-                            ${optionsHtml}
-                            <button class="mt-4 bg-blue-600 text-white font-bold py-2 px-4 rounded shadow" onclick="document.getElementById('ans${index}').classList.remove('hidden')">
-                                答えと解説を見る
-                            </button>
-                            <div id="ans${index}" class="hidden mt-4 p-4 bg-green-100 text-green-900 rounded border border-green-300">
-                                <p class="font-bold text-lg sm:text-xl mb-2">正解：${q.answer}</p>
-                                <hr class="border-green-300 mb-2" />
-                                <p class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">${q.explanation}</p>
-                            </div>
-                        </div>
-                    `;
-                    quizContainer.innerHTML += questionBlock;
-                });
-                quizArea.classList.remove('hidden');
-            }
-
-            dashboardPage.classList.add('hidden');
-            studyPage.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
+        // ==========================================
+        // 読み上げ（TTS）関連
+        // ==========================================
         function buildTtsChunksAndUI() {
             window.currentTtsChunks = [];
             ttsModeSelect.innerHTML = '<option value="all">すべて読上</option>';
-            
-            let currentChunkText = "";
-            let currentChunkTitle = "ページ上部";
-            
+            let currentChunkText = "", currentChunkTitle = "ページ上部";
             const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
             let node;
             
             while(node = walker.nextNode()) {
                 if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) {
-                    if (currentChunkText.trim()) {
-                        window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
-                    }
+                    if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
                     let rawTitle = (node.innerText || node.textContent).trim();
                     currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle;
                     currentChunkText = rawTitle + "。\n";
@@ -437,30 +603,20 @@
                     currentChunkText += node.textContent + " ";
                 }
             }
-            if (currentChunkText.trim()) {
-                window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
-            }
+            if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
 
             if (window.currentTtsChunks.length > 1) {
-                const groupFrom = document.createElement('optgroup');
-                groupFrom.label = "▼ ここから最後まで ▼";
-                window.currentTtsChunks.forEach((c, i) => {
-                    groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`;
-                });
+                const groupFrom = document.createElement('optgroup'); groupFrom.label = "▼ ここから最後まで ▼";
+                window.currentTtsChunks.forEach((c, i) => groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`);
                 ttsModeSelect.appendChild(groupFrom);
-
-                const groupOnly = document.createElement('optgroup');
-                groupOnly.label = "▼ この部分のみ ▼";
-                window.currentTtsChunks.forEach((c, i) => {
-                    groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`;
-                });
+                const groupOnly = document.createElement('optgroup'); groupOnly.label = "▼ この部分のみ ▼";
+                window.currentTtsChunks.forEach((c, i) => groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`);
                 ttsModeSelect.appendChild(groupOnly);
             }
         }
 
         function resetTtsUI() {
-            ttsIcon.textContent = '🔊';
-            ttsText.textContent = '再生';
+            ttsIcon.textContent = '🔊'; ttsText.textContent = '再生';
             ttsPlayerContainer.classList.replace('bg-pink-50', 'bg-indigo-50');
             ttsPlayerContainer.classList.replace('border-pink-300', 'border-indigo-200');
             ttsBtn.classList.replace('text-pink-700', 'text-indigo-700');
@@ -470,8 +626,7 @@
         }
 
         function setTtsUIPlaying() {
-            ttsIcon.textContent = '⏹️';
-            ttsText.textContent = '停止';
+            ttsIcon.textContent = '⏹️'; ttsText.textContent = '停止';
             ttsPlayerContainer.classList.replace('bg-indigo-50', 'bg-pink-50');
             ttsPlayerContainer.classList.replace('border-indigo-200', 'border-pink-300');
             ttsBtn.classList.replace('text-indigo-700', 'text-pink-700');
@@ -480,153 +635,45 @@
             ttsModeSelect.classList.replace('border-indigo-200', 'border-pink-300');
         }
 
-        function stopTtsPlayback() {
-            isSpeaking = false;
-            ttsQueue = [];
-            window.speechSynthesis.cancel();
-            resetTtsUI();
-        }
+        function stopTtsPlayback() { isSpeaking = false; ttsQueue = []; window.speechSynthesis.cancel(); resetTtsUI(); }
 
         function playNextTtsQueue() {
-            if (!isSpeaking || ttsQueue.length === 0) {
-                stopTtsPlayback();
-                return;
-            }
-            
+            if (!isSpeaking || ttsQueue.length === 0) { stopTtsPlayback(); return; }
             let text = ttsQueue.shift();
-
-            if (!/[。！？.!?]$/.test(text)) {
-                text += "。";
-            }
+            if (!/[。！？.!?]$/.test(text)) text += "。";
             
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ja-JP';
-            utterance.rate = 1.0;
-            
-            utterance.onend = () => {
-                if (isSpeaking) setTimeout(playNextTtsQueue, 400);
-            };
-            utterance.onerror = (e) => {
-                if (isSpeaking) setTimeout(playNextTtsQueue, 400);
-            };
-            
+            utterance.lang = 'ja-JP'; utterance.rate = 1.0;
+            utterance.onend = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); };
+            utterance.onerror = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); };
             setTimeout(() => window.speechSynthesis.speak(utterance), 50);
         }
 
         ttsBtn.addEventListener('click', function() {
-            if (isSpeaking) {
-                stopTtsPlayback();
-                return;
-            }
+            if (isSpeaking) { stopTtsPlayback(); return; }
+            let textToSpeak = ""; const mode = ttsModeSelect.value;
+            if (mode === 'all') textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n');
+            else if (mode.startsWith('from_')) textToSpeak = window.currentTtsChunks.slice(parseInt(mode.split('_')[1])).map(c => c.text).join('\n\n');
+            else if (mode.startsWith('only_')) textToSpeak = window.currentTtsChunks[parseInt(mode.split('_')[1])].text;
 
-            let textToSpeak = "";
-            const mode = ttsModeSelect.value;
+            if (!textToSpeak || !textToSpeak.trim()) textToSpeak = readableText.innerText || readableText.textContent;
+            if (!textToSpeak || !textToSpeak.trim()) return alert("読み上げるテキストがありません。");
 
-            if (mode === 'all') {
-                textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n');
-            } else if (mode.startsWith('from_')) {
-                const idx = parseInt(mode.split('_')[1]);
-                textToSpeak = window.currentTtsChunks.slice(idx).map(c => c.text).join('\n\n');
-            } else if (mode.startsWith('only_')) {
-                const idx = parseInt(mode.split('_')[1]);
-                textToSpeak = window.currentTtsChunks[idx].text;
-            }
-
-            if (!textToSpeak || !textToSpeak.trim()) {
-                textToSpeak = readableText.innerText || readableText.textContent;
-            }
-
-            if (!textToSpeak || !textToSpeak.trim()) {
-                alert("読み上げるテキストがありません。");
-                return;
-            }
-
-            // 【新規追加】読み上げ用のテキスト整形（ルビ振り・息継ぎ調整）
-            // 1. 「2-1」や「2-1-1」などを「2の1」に読み替える
-            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2');
-            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2'); // 連続ハイフン対策で2回実行
-
-            // 2. 丸数字（①〜⑳）の前で分割し、後ろに「、」を補って確実に息継ぎさせる
+            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2');
             textToSpeak = textToSpeak.replace(/([①-⑳])/g, '\n$1、');
 
             ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak];
             ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0);
 
-            isSpeaking = true;
-            setTtsUIPlaying();
-            window.speechSynthesis.cancel();
-            playNextTtsQueue(); 
+            isSpeaking = true; setTtsUIPlaying(); window.speechSynthesis.cancel(); playNextTtsQueue(); 
         });
 
-        function loadSavedData() {
-            const L = selLarge.value, M = selMedium.value, S = selSmall.value;
-            if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
-            const records = studyData[L][M][S];
-            let allTexts = [], allQuestions = [];
-            records.forEach(record => {
-                if (record.extracted_text) allTexts.push(record.extracted_text.replace(/\n/g, '<br />'));
-                const q = record.generated_questions || record.questions;
-                if (q) allQuestions = allQuestions.concat(q);
-            });
-            renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
-        }
-
-        async function generateNewQuizFromSavedData() {
-            const L = selLarge.value, M = selMedium.value, S = selSmall.value;
-            if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
-
-            const records = studyData[L][M][S];
-            let allTexts = [];
-            records.forEach(record => {
-                if (record.extracted_text) allTexts.push(record.extracted_text);
-            });
-
-            const combinedText = allTexts.join("\n\n");
-            if (!combinedText.trim()) {
-                return alert("このフォルダには読み取ったテキストデータがないため、新しい問題を作成できません。");
-            }
-
-            const numQuestions = document.getElementById('review-question-count').value;
-            const btn = document.getElementById('generate-review-btn');
-
-            btn.textContent = "⚙️ AIが作成中...";
-            btn.disabled = true;
-            btn.classList.replace('bg-green-600', 'bg-gray-400');
-
-            try {
-                const response = await fetch("/api/generate-quiz", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        text: combinedText, 
-                        num_questions: parseInt(numQuestions) 
-                    })
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error || "問題の生成に失敗しました");
-                }
-
-                const data = await response.json();
-                const newQuestions = data.generated_questions || [];
-
-                let formattedTexts = allTexts.map(t => t.replace(/\n/g, '<br />'));
-                renderStudyPage(formattedTexts, newQuestions, `📁 ${L} > ${M} > ${S} (新規作成: ${numQuestions}問)`);
-
-            } catch (error) {
-                alert("エラーが発生しました: " + error.message);
-            } finally {
-                btn.textContent = "新しく作る";
-                btn.disabled = false;
-                btn.classList.replace('bg-gray-400', 'bg-green-600');
-            }
-        }
-
+        // ==========================================
+        // 画像アップロード・解析
+        // ==========================================
         const compressImage = async (file, maxWidth = 1200) => {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
+                const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = (event) => {
                     const img = new Image(); img.src = event.target.result;
                     img.onload = () => {
@@ -635,130 +682,68 @@
                             if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
                             else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
                         }
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob((blob) => {
-                            resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() }));
-                        }, 'image/jpeg', 0.8);
+                        const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() })), 'image/jpeg', 0.8);
                     };
-                    img.onerror = (e) => reject(e);
+                    img.onerror = reject;
                 };
-                reader.onerror = (e) => reject(e);
+                reader.onerror = reject;
             });
         };
 
-        const imageInput = document.getElementById('image-upload');
-        const fileNameDisplay = document.getElementById('file-name');
-        const extractBtn = document.getElementById('extract-btn');
-        const questionCountInput = document.getElementById('question-count');
+        const imageInput = document.getElementById('image-upload'), fileNameDisplay = document.getElementById('file-name'), extractBtn = document.getElementById('extract-btn');
 
         imageInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) {
                 const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>');
                 fileNameDisplay.innerHTML = `📸 ${e.target.files.length}枚の画像がセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
-            } else {
-                fileNameDisplay.innerHTML = '';
-            }
+            } else fileNameDisplay.innerHTML = '';
         });
 
         extractBtn.addEventListener('click', async function() {
-            if(!imageInput.files.length) {
-                alert("画像を選択してください！");
-                return;
-            }
-
-            const L = document.getElementById('folder-large').value.trim();
-            const M = document.getElementById('folder-medium').value.trim();
-            const S = document.getElementById('folder-small').value.trim();
+            if(!imageInput.files.length) return alert("画像を選択してください！");
+            
+            const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim();
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
             
-            extractBtn.textContent = "⚙️ 画像を準備中...";
-            extractBtn.disabled = true;
-            extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
-
-            let filesArray = Array.from(imageInput.files);
-            filesArray.sort((a, b) => a.name.localeCompare(b.name));
-
-            let totalQuestionsRequested = parseInt(questionCountInput.value);
-            let questionsPerFile = [];
+            extractBtn.textContent = "⚙️ 画像を準備中..."; extractBtn.disabled = true; extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
+            
+            let filesArray = Array.from(imageInput.files).sort((a, b) => a.name.localeCompare(b.name));
+            let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = [];
             for (let i = 0; i < filesArray.length; i++) {
-                if (mode === "workbook") {
-                    questionsPerFile.push(1);
-                } else {
-                    let q = Math.floor(totalQuestionsRequested / filesArray.length);
-                    if (i < (totalQuestionsRequested % filesArray.length)) { q += 1; }
-                    questionsPerFile.push(q);
-                }
+                if (mode === "workbook") qPerFile.push(1);
+                else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); }
             }
 
-            let combinedExtractedText = [];
-            let combinedQuestions = [];
-
+            let combinedText = [], combinedQ = [];
             try {
                 for (let i = 0; i < filesArray.length; i++) {
-                    const currentNum = i + 1;
-                    const totalNum = filesArray.length;
-
-                    extractBtn.textContent = `⚙️ 画像を圧縮中... (${currentNum}/${totalNum}枚目)`;
+                    extractBtn.textContent = `⚙️ 圧縮中... (${i+1}/${filesArray.length}枚目)`;
                     const compressedFile = await compressImage(filesArray[i]);
-
-                    extractBtn.textContent = `⚙️ AIが解析中... (${currentNum}/${totalNum}枚目)`;
-
-                    const formData = new FormData();
-                    formData.append("file", compressedFile);
-                    formData.append("mode", mode);
-                    formData.append("num_questions", questionsPerFile[i]);
-
-                    const response = await fetch("/api/analyze", { method: "POST", body: formData });
-                    if (!response.ok) {
-                        let errorMsg = `${currentNum}枚目の解析でサーバーエラーが発生しました`;
-                        try {
-                            const errData = await response.json();
-                            if (errData && errData.error) errorMsg = errData.error;
-                        } catch (e) {}
-                        throw new Error(errorMsg);
-                    }
-
-                    const data = await response.json();
-                    if (data.extracted_text) combinedExtractedText.push(data.extracted_text);
-                    const questions = data.generated_questions || data.questions;
-                    if (questions && questions.length > 0) combinedQuestions = combinedQuestions.concat(questions);
+                    extractBtn.textContent = `⚙️ AIが解析中... (${i+1}/${filesArray.length}枚目)`;
+                    
+                    const fd = new FormData(); fd.append("file", compressedFile); fd.append("mode", mode); fd.append("num_questions", qPerFile[i]);
+                    const res = await fetch("/api/analyze", { method: "POST", body: fd });
+                    if (!res.ok) throw new Error(`${i+1}枚目の解析でエラーが発生しました`);
+                    
+                    const data = await res.json();
+                    if (data.extracted_text) combinedText.push(data.extracted_text);
+                    if (data.generated_questions) combinedQ = combinedQ.concat(data.generated_questions);
+                    else if (data.questions) combinedQ = combinedQ.concat(data.questions);
                 }
-
-                const finalCombinedData = {
-                    type: mode,
-                    extracted_text: combinedExtractedText.join("\n\n"),
-                    generated_questions: combinedQuestions
-                };
-
-                await saveToFolder(L, M, S, finalCombinedData);
-
-                let textArr = [];
-                if (finalCombinedData.extracted_text) textArr.push(finalCombinedData.extracted_text.replace(/\n/g, '<br />'));
-                renderStudyPage(textArr, finalCombinedData.generated_questions, `📁 ${L || '未分類'} > ${M || '未分類'} > ${S || '未分類'}`);
-
-                imageInput.value = '';
-                fileNameDisplay.innerHTML = '';
-
-            } catch (error) {
-                alert("解析の途中で失敗しました。\n詳細: " + error.message);
-            } finally {
-                extractBtn.textContent = "AIに送信して解析・保存スタート";
-                extractBtn.disabled = false;
-                extractBtn.classList.replace('bg-gray-400', 'bg-blue-600');
-            }
+                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ });
+                
+                imageInput.value = ''; fileNameDisplay.innerHTML = '';
+                // renderStudyPageは saveToFolder側で本棚へ遷移するためここでは呼ばない
+            } catch (error) { alert("失敗しました。\n詳細: " + error.message); } 
+            finally { extractBtn.textContent = "AIに送信して解析・保存スタート"; extractBtn.disabled = false; extractBtn.classList.replace('bg-gray-400', 'bg-blue-600'); }
         });
 
         document.getElementById('highlight-btn').addEventListener('click', function() {
-            const selection = window.getSelection();
-            if (!selection.rangeCount || selection.toString().trim() === '') {
-                alert("マーカーを引きたい文字をなぞってからボタンを押してください。");
-                return;
-            }
-            const range = selection.getRangeAt(0);
-            const span = document.createElement('span'); span.className = 'user-mark';
-            try { range.surroundContents(span); selection.removeAllRanges(); } catch (e) {}
+            const sel = window.getSelection();
+            if (!sel.rangeCount || sel.toString().trim() === '') return alert("マーカーを引きたい文字をなぞってください。");
+            try { const span = document.createElement('span'); span.className = 'user-mark'; sel.getRangeAt(0).surroundContents(span); sel.removeAllRanges(); } catch(e){}
         });
     </script>
 </body>
