@@ -495,8 +495,6 @@
             
             let text = ttsQueue.shift();
 
-            // 【改行対策】箇条書きや表組みなど、文末に句読点がない場合は「。」を補う
-            // これにより、音声エンジンが「文の終わり」と認識し、自然にイントネーションが下がります。
             if (!/[。！？.!?]$/.test(text)) {
                 text += "。";
             }
@@ -506,7 +504,6 @@
             utterance.rate = 1.0;
             
             utterance.onend = () => {
-                // 【改行対策】0.4秒の「息継ぎ（間）」を作ってから次の文を再生する
                 if (isSpeaking) setTimeout(playNextTtsQueue, 400);
             };
             utterance.onerror = (e) => {
@@ -543,6 +540,14 @@
                 alert("読み上げるテキストがありません。");
                 return;
             }
+
+            // 【新規追加】読み上げ用のテキスト整形（ルビ振り・息継ぎ調整）
+            // 1. 「2-1」や「2-1-1」などを「2の1」に読み替える
+            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2');
+            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2'); // 連続ハイフン対策で2回実行
+
+            // 2. 丸数字（①〜⑳）の前で分割し、後ろに「、」を補って確実に息継ぎさせる
+            textToSpeak = textToSpeak.replace(/([①-⑳])/g, '\n$1、');
 
             ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak];
             ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0);
