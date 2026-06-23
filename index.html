@@ -121,9 +121,10 @@
                 <div class="mb-6">
                     <div class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition overflow-hidden">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
-                            <p class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
+                            <p class="text-sm text-blue-600 font-semibold">📸 写真・PDFを選択</p>
+                            <p class="text-xs text-gray-500 mt-1">複数選択可。PDFも読み込めます</p>
                         </div>
-                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" multiple />
+                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*,application/pdf" multiple />
                     </div>
                     <div id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 min-h-[1rem]"></div>
                 </div>
@@ -185,7 +186,7 @@
             </button>
             <button onclick="switchTab('add-data')" id="nav-add-data" class="flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
                 <span class="text-2xl mb-1">📸</span>
-                <span class="text-[10px] font-bold">スキャン</span>
+                <span class="text-[10px] font-bold">追加</span>
             </button>
         </div>
     </div>
@@ -298,7 +299,7 @@
         }
 
         // ==========================================
-        // ★修正追加★ 学習画面のレンダリング
+        // 学習画面のレンダリング（空白カット処理付き）
         // ==========================================
         function renderStudyPage(extractedTexts, questions, folderPathStr) {
             document.getElementById('bookshelf-tab').classList.add('hidden');
@@ -316,7 +317,17 @@
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts && extractedTexts.length > 0) {
-                readableText.innerHTML = extractedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
+                // 【変更】無駄な改行や巨大な空白を強制的に詰める処理
+                const cleanedTexts = extractedTexts.map(t => {
+                    if(!t) return '';
+                    // 連続する空行を最大1行に制限し、前後の空白を削除
+                    return t.replace(/(\r\n|\n|\r)/g, '\n')
+                            .replace(/\n{3,}/g, '\n\n')
+                            .trim()
+                            .replace(/\n/g, '<br />');
+                }).filter(t => t !== '');
+
+                readableText.innerHTML = cleanedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
                 textArea.classList.remove('hidden');
                 buildTtsChunksAndUI();
             }
@@ -500,7 +511,7 @@
             const records = studyData[L][M][S];
             let allTexts = [], allQuestions = [];
             records.forEach(r => {
-                if (r.extracted_text) allTexts.push(r.extracted_text.replace(/\n/g, '<br />'));
+                if (r.extracted_text) allTexts.push(r.extracted_text); // 改行を<br>に変えるのはrenderStudyPage内で行う
                 if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions);
                 if (r.questions) allQuestions = allQuestions.concat(r.questions);
             });
@@ -532,8 +543,7 @@
                 const data = await response.json();
                 
                 closeActionModal();
-                let formattedTexts = allTexts.map(t => t.replace(/\n/g, '<br />'));
-                renderStudyPage(formattedTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`);
+                renderStudyPage(allTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`);
 
             } catch (error) {
                 alert(error.message);
@@ -726,7 +736,7 @@
         });
 
         // ==========================================
-        // 画像アップロード・解析
+        // 画像・PDFアップロード・解析
         // ==========================================
         const compressImage = async (file, maxWidth = 1200) => {
             return new Promise((resolve, reject) => {
@@ -754,17 +764,18 @@
         imageInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) {
                 const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>');
-                fileNameDisplay.innerHTML = `📸 ${e.target.files.length}枚の画像がセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
+                // 【変更】PDF対応に合わせて表記を変更
+                fileNameDisplay.innerHTML = `📄 ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
             } else fileNameDisplay.innerHTML = '';
         });
 
         extractBtn.addEventListener('click', async function() {
-            if(!imageInput.files.length) return alert("画像を選択してください！");
+            if(!imageInput.files.length) return alert("ファイルを選択してください！");
             
             const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim();
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
             
-            extractBtn.textContent = "⚙️ 画像を準備中..."; extractBtn.disabled = true; extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
+            extractBtn.textContent = "⚙️ ファイルを準備中..."; extractBtn.disabled = true; extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
             
             let filesArray = Array.from(imageInput.files).sort((a, b) => a.name.localeCompare(b.name));
             let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = [];
@@ -776,13 +787,26 @@
             let combinedText = [], combinedQ = [];
             try {
                 for (let i = 0; i < filesArray.length; i++) {
-                    extractBtn.textContent = `⚙️ 圧縮中... (${i+1}/${filesArray.length}枚目)`;
-                    const compressedFile = await compressImage(filesArray[i]);
-                    extractBtn.textContent = `⚙️ AIが解析中... (${i+1}/${filesArray.length}枚目)`;
+                    const file = filesArray[i];
+                    let fileToSend = file;
+
+                    // 【変更】写真なら圧縮、PDFならそのまま送信するロジック
+                    if (file.type.startsWith('image/')) {
+                        extractBtn.textContent = `⚙️ 画像を圧縮中... (${i+1}/${filesArray.length}枚目)`;
+                        fileToSend = await compressImage(file);
+                    } else if (file.type === 'application/pdf') {
+                        if (file.size > 15 * 1024 * 1024) { // PDFが15MBを超える場合の安全ストッパー
+                            throw new Error(`PDFのサイズが大きすぎます (${file.name})。15MB以下のPDFを選択してください。`);
+                        }
+                    } else {
+                        throw new Error(`未対応のファイル形式です: ${file.name}`);
+                    }
+
+                    extractBtn.textContent = `⚙️ AIが解析中... (${i+1}/${filesArray.length})`;
                     
-                    const fd = new FormData(); fd.append("file", compressedFile); fd.append("mode", mode); fd.append("num_questions", qPerFile[i]);
+                    const fd = new FormData(); fd.append("file", fileToSend); fd.append("mode", mode); fd.append("num_questions", qPerFile[i]);
                     const res = await fetch("/api/analyze", { method: "POST", body: fd });
-                    if (!res.ok) throw new Error(`${i+1}枚目の解析でエラーが発生しました`);
+                    if (!res.ok) throw new Error(`${i+1}個目の解析でエラーが発生しました`);
                     
                     const data = await res.json();
                     if (data.extracted_text) combinedText.push(data.extracted_text);
