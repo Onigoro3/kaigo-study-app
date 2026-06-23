@@ -19,6 +19,10 @@
         #readable-text th { background-color: #dbeafe; font-weight: bold; color: #1e3a8a; }
         #readable-text tr:nth-child(even) { background-color: #f9fafb; }
         #readable-text tr:hover { background-color: #f3f4f6; }
+
+        /* ドロップダウンの見た目調整用 */
+        select optgroup { font-weight: bold; color: #4338ca; background-color: #e0e7ff; }
+        select option { color: #1f2937; background-color: #ffffff; font-weight: normal; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans leading-normal tracking-normal pb-10">
@@ -156,9 +160,14 @@
                             <option value="xlarge">文字: 特大</option>
                         </select>
                         
-                        <button id="tts-btn" class="bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-3 rounded-lg shadow-sm flex items-center transition text-sm">
-                            <span id="tts-icon">🔊</span><span id="tts-text" class="ml-1 hidden sm:inline">読上</span>
-                        </button>
+                        <div id="tts-player-container" class="flex items-center bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm overflow-hidden">
+                            <select id="tts-mode" class="bg-transparent text-indigo-700 text-sm py-2 px-2 focus:outline-none max-w-[140px] sm:max-w-[200px] border-r border-indigo-200 cursor-pointer">
+                                <option value="all">すべて読上</option>
+                            </select>
+                            <button id="tts-btn" class="hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-3 flex items-center transition text-sm">
+                                <span id="tts-icon">🔊</span><span id="tts-text" class="ml-1 hidden sm:inline">再生</span>
+                            </button>
+                        </div>
 
                         <button id="highlight-btn" class="bg-pink-50 border border-pink-200 hover:bg-pink-100 text-pink-700 font-bold py-2 px-3 rounded-lg shadow-sm flex items-center transition text-sm">
                             🖋 <span class="ml-1 hidden sm:inline">マーカー</span>
@@ -178,6 +187,11 @@
 
     <script>
         let studyData = {};
+        
+        // --- 読み上げ用グローバル変数 ---
+        window.currentTtsChunks = []; // 見出しごとに分割したテキストデータ
+        let isSpeaking = false;
+        let ttsQueue = []; // 長文分割再生用のキュー
 
         async function fetchLatestData() {
             try {
@@ -217,52 +231,27 @@
 
         async function loadDataFromServer() {
             const latestData = await fetchLatestData();
-            
             if (latestData) {
-                const prevL = selLarge.value;
-                const prevM = selMedium.value;
-                const prevS = selSmall.value;
-
+                const prevL = selLarge.value, prevM = selMedium.value, prevS = selSmall.value;
                 studyData = latestData;
                 renderLargeDropdown();
-
                 if (prevL && selLarge.querySelector(`option[value="${prevL}"]`)) {
                     selLarge.value = prevL;
                     updateMediumDropdown();
                     if (prevM && selMedium.querySelector(`option[value="${prevM}"]`)) {
                         selMedium.value = prevM;
                         updateSmallDropdown();
-                        if (prevS && selSmall.querySelector(`option[value="${prevS}"]`)) {
-                            selSmall.value = prevS;
-                        }
+                        if (prevS && selSmall.querySelector(`option[value="${prevS}"]`)) selSmall.value = prevS;
                     }
                 }
             } else if (Object.keys(studyData).length === 0) {
-                studyData = {
-                    "共通様式": {
-                        "国保連提出書類": {
-                            "様式第二（介護給付費明細書）": [{
-                                "type": "textbook",
-                                "extracted_text": "<h3>【様式第二：介護給付費明細書】の構造と必須記載ルール<\\/h3><br \\/>様式第二は、介護サービス事業所が国保連へ請求する最も重要な明細書です。<br \\/><br \\/><table><thead><tr><th>対象エリア<\\/th><th>記載項目<\\/th><th>テスト対策・実務の罠<\\/th><\\/tr><\\/thead><tbody><tr><td>ヘッダー部<\\/td><td>保険者番号・被保険者番号<\\/td><td>市町村を跨ぐ転居時、旧番号での請求ミスが頻出。必ず現在の被保険者証を確認すること。<\\/td><\\/tr><tr><td>明細欄<\\/td><td>サービスコード・単位数<\\/td><td>サービスコードの「加算・減算算定要件」の根拠が一番狙われます。特に夜間・早朝加算の算定時間帯に注意。<\\/td><\\/tr><tr><td>集計部<\\/td><td>請求額・利用者負担額<\\/td><td>給付率（原則9割、所得により8割・7割）の掛け算ミスに注意。端数処理は『1円未満切り捨て』です。<\\/td><\\/tr><\\/tbody><\\/table>".replace(/\\\//g, '/'),
-                                "generated_questions": [{
-                                    "question_text": "様式第二における請求額および利用者負担額の計算で、端数（1円未満）が生じた場合の処理として正しいものはどれか。",
-                                    "options": ["四捨五入する", "切り上げる", "切り捨てる", "市町村の条例による"],
-                                    "answer": "切り捨てる",
-                                    "explanation": "介護報酬請求における金額計算の端数処理は、原則として「1円未満切り捨て」と法律で規定されています。"
-                                }]
-                            }]
-                        }
-                    }
-                };
-                await syncDataWithServer();
+                studyData = {};
                 renderLargeDropdown();
             }
         }
 
         function updateDataLists() {
-            const listL = document.getElementById('list-large');
-            const listM = document.getElementById('list-medium');
-            const listS = document.getElementById('list-small');
+            const listL = document.getElementById('list-large'), listM = document.getElementById('list-medium'), listS = document.getElementById('list-small');
             listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
             let setL = new Set(), setM = new Set(), setS = new Set();
             for (const L in studyData) {
@@ -284,12 +273,9 @@
         function renderLargeDropdown() {
             selLarge.innerHTML = '<option value="">選択してください</option>';
             for (const L in studyData) {
-                const opt = document.createElement('option');
-                opt.value = L; opt.textContent = L;
-                selLarge.appendChild(opt);
+                const opt = document.createElement('option'); opt.value = L; opt.textContent = L; selLarge.appendChild(opt);
             }
-            updateMediumDropdown(); 
-            updateDataLists();
+            updateMediumDropdown(); updateDataLists();
         }
 
         function updateMediumDropdown() {
@@ -300,23 +286,19 @@
             if (L && studyData[L]) {
                 selMedium.disabled = false; selMedium.classList.remove('bg-gray-100');
                 for (const M in studyData[L]) {
-                    const opt = document.createElement('option');
-                    opt.value = M; opt.textContent = M;
-                    selMedium.appendChild(opt);
+                    const opt = document.createElement('option'); opt.value = M; opt.textContent = M; selMedium.appendChild(opt);
                 }
             }
         }
 
         function updateSmallDropdown() {
-            const L = selLarge.value; const M = selMedium.value;
+            const L = selLarge.value, M = selMedium.value;
             selSmall.innerHTML = '<option value="">選択してください</option>';
             if (L && M && studyData[L] && studyData[L][M]) {
                 selSmall.disabled = false; selSmall.classList.remove('bg-gray-100');
                 for (const S in studyData[L][M]) {
                     const count = studyData[L][M][S].length;
-                    const opt = document.createElement('option');
-                    opt.value = S; opt.textContent = `${S} (${count}件の記録)`;
-                    selSmall.appendChild(opt);
+                    const opt = document.createElement('option'); opt.value = S; opt.textContent = `${S} (${count}件の記録)`; selSmall.appendChild(opt);
                 }
             } else {
                 selSmall.disabled = true; selSmall.classList.add('bg-gray-100');
@@ -325,11 +307,8 @@
 
         async function saveToFolder(large, medium, small, data) {
             large = large || '未分類'; medium = medium || '未分類'; small = small || '未分類';
-            
             const latestData = await fetchLatestData();
-            if (latestData) {
-                studyData = latestData;
-            }
+            if (latestData) studyData = latestData;
 
             if (!studyData[large]) studyData[large] = {};
             if (!studyData[large][medium]) studyData[large][medium] = {};
@@ -344,7 +323,6 @@
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("削除する小フォルダまで選択してください。");
             if (confirm(`「${L} ＞ ${M} ＞ ${S}」のデータを全て削除してもよろしいですか？`)) {
-                
                 const latestData = await fetchLatestData();
                 if (latestData) studyData = latestData;
 
@@ -369,18 +347,18 @@
         const quizContainer = document.getElementById('quiz-container');
         const currentFolderDisplay = document.getElementById('current-folder-display');
 
+        // 音声UIコンポーネント
         const ttsBtn = document.getElementById('tts-btn');
         const ttsIcon = document.getElementById('tts-icon');
         const ttsText = document.getElementById('tts-text');
+        const ttsModeSelect = document.getElementById('tts-mode');
+        const ttsPlayerContainer = document.getElementById('tts-player-container');
 
         function returnToDashboard() {
-            window.speechSynthesis.cancel();
-            resetTtsUI();
-
+            stopTtsPlayback();
             studyPage.classList.add('hidden');
             dashboardPage.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
-
             loadDataFromServer();
         }
 
@@ -396,6 +374,9 @@
             if (extractedTexts.length > 0) {
                 readableText.innerHTML = extractedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
                 textArea.classList.remove('hidden');
+                
+                // 【新規】レンダリング後に見出しを解析してセクションリストを作成する
+                buildTtsChunksAndUI();
             }
 
             if (questions && questions.length > 0) {
@@ -439,6 +420,153 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // ==========================================
+        // 【新規】テキストを見出しごとに分解してプレイリストを作る関数
+        // ==========================================
+        function buildTtsChunksAndUI() {
+            window.currentTtsChunks = [];
+            ttsModeSelect.innerHTML = '<option value="all">すべて読上</option>';
+            
+            let currentChunkText = "";
+            let currentChunkTitle = "ページ上部";
+            
+            // DOMツリーを巡回してテキストと見出しを収集
+            const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            
+            while(node = walker.nextNode()) {
+                if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) {
+                    // 見出しを見つけたら、それまでのテキストを一つの区切りとして保存
+                    if (currentChunkText.trim()) {
+                        window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
+                    }
+                    // 新しい区切りのタイトルを設定
+                    let rawTitle = (node.innerText || node.textContent).trim();
+                    currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle;
+                    // 見出し自体も読み上げテキストに含める
+                    currentChunkText = rawTitle + "。\n";
+                } else if (node.nodeType === Node.TEXT_NODE) {
+                    currentChunkText += node.textContent + " ";
+                }
+            }
+            // 最後の塊を保存
+            if (currentChunkText.trim()) {
+                window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
+            }
+
+            // 見出しが複数ある場合のみ、高度なドロップダウンメニューを生成する
+            if (window.currentTtsChunks.length > 1) {
+                const groupFrom = document.createElement('optgroup');
+                groupFrom.label = "▼ ここから最後まで ▼";
+                window.currentTtsChunks.forEach((c, i) => {
+                    groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`;
+                });
+                ttsModeSelect.appendChild(groupFrom);
+
+                const groupOnly = document.createElement('optgroup');
+                groupOnly.label = "▼ この部分のみ ▼";
+                window.currentTtsChunks.forEach((c, i) => {
+                    groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`;
+                });
+                ttsModeSelect.appendChild(groupOnly);
+            }
+        }
+
+        // ==========================================
+        // 【新規】スマホでも止まらない堅牢な読み上げエンジン
+        // ==========================================
+        function resetTtsUI() {
+            ttsIcon.textContent = '🔊';
+            ttsText.textContent = '再生';
+            ttsPlayerContainer.classList.replace('bg-pink-50', 'bg-indigo-50');
+            ttsPlayerContainer.classList.replace('border-pink-300', 'border-indigo-200');
+            ttsBtn.classList.replace('text-pink-700', 'text-indigo-700');
+            ttsBtn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100');
+            ttsModeSelect.classList.replace('text-pink-700', 'text-indigo-700');
+            ttsModeSelect.classList.replace('border-pink-300', 'border-indigo-200');
+        }
+
+        function setTtsUIPlaying() {
+            ttsIcon.textContent = '⏹️';
+            ttsText.textContent = '停止';
+            ttsPlayerContainer.classList.replace('bg-indigo-50', 'bg-pink-50');
+            ttsPlayerContainer.classList.replace('border-indigo-200', 'border-pink-300');
+            ttsBtn.classList.replace('text-indigo-700', 'text-pink-700');
+            ttsBtn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100');
+            ttsModeSelect.classList.replace('text-indigo-700', 'text-pink-700');
+            ttsModeSelect.classList.replace('border-indigo-200', 'border-pink-300');
+        }
+
+        function stopTtsPlayback() {
+            isSpeaking = false;
+            ttsQueue = [];
+            window.speechSynthesis.cancel();
+            resetTtsUI();
+        }
+
+        function playNextTtsQueue() {
+            if (!isSpeaking || ttsQueue.length === 0) {
+                stopTtsPlayback();
+                return;
+            }
+            
+            const text = ttsQueue.shift();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP';
+            utterance.rate = 1.0;
+            
+            utterance.onend = () => {
+                if (isSpeaking) playNextTtsQueue(); // 次のキューを再生
+            };
+            utterance.onerror = (e) => {
+                if (isSpeaking) playNextTtsQueue(); // エラー時はスキップして次へ
+            };
+            
+            // iOS対策でわずかに遅延させて発火
+            setTimeout(() => window.speechSynthesis.speak(utterance), 50);
+        }
+
+        ttsBtn.addEventListener('click', function() {
+            if (isSpeaking) {
+                stopTtsPlayback();
+                return;
+            }
+
+            let textToSpeak = "";
+            const mode = ttsModeSelect.value;
+
+            // ドロップダウンの選択に応じてテキストを結合
+            if (mode === 'all') {
+                textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n');
+            } else if (mode.startsWith('from_')) {
+                const idx = parseInt(mode.split('_')[1]);
+                textToSpeak = window.currentTtsChunks.slice(idx).map(c => c.text).join('\n\n');
+            } else if (mode.startsWith('only_')) {
+                const idx = parseInt(mode.split('_')[1]);
+                textToSpeak = window.currentTtsChunks[idx].text;
+            }
+
+            // 万が一解析に失敗していた場合のフォールバック
+            if (!textToSpeak || !textToSpeak.trim()) {
+                textToSpeak = readableText.innerText || readableText.textContent;
+            }
+
+            if (!textToSpeak || !textToSpeak.trim()) {
+                alert("読み上げるテキストがありません。");
+                return;
+            }
+
+            // フリーズ対策：文章を句読点や改行で細かく分割し、キュー（待ち行列）に入れる
+            ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak];
+            ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0);
+
+            isSpeaking = true;
+            setTtsUIPlaying();
+            window.speechSynthesis.cancel();
+            playNextTtsQueue(); // プレイリスト再生開始
+        });
+        // ==========================================
+
         function loadSavedData() {
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
@@ -452,7 +580,6 @@
             renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
         }
 
-        // 【新規追加】テキストから新しい問題を作成する機能
         async function generateNewQuizFromSavedData() {
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
             if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
@@ -493,7 +620,6 @@
                 const data = await response.json();
                 const newQuestions = data.generated_questions || [];
 
-                // 作成した問題を使って学習画面を表示
                 let formattedTexts = allTexts.map(t => t.replace(/\n/g, '<br />'));
                 renderStudyPage(formattedTexts, newQuestions, `📁 ${L} > ${M} > ${S} (新規作成: ${numQuestions}問)`);
 
@@ -543,46 +669,6 @@
             } else {
                 fileNameDisplay.innerHTML = '';
             }
-        });
-
-        function resetTtsUI() {
-            ttsIcon.textContent = '🔊';
-            ttsText.textContent = '読上';
-            ttsBtn.classList.replace('bg-pink-100', 'bg-indigo-50');
-            ttsBtn.classList.replace('text-pink-700', 'text-indigo-700');
-            ttsBtn.classList.replace('border-pink-200', 'border-indigo-200');
-        }
-
-        ttsBtn.addEventListener('click', function() {
-            window.speechSynthesis.cancel();
-
-            if (ttsIcon.textContent === '⏹️') {
-                resetTtsUI();
-                return;
-            }
-
-            const textToSpeak = readableText.innerText || readableText.textContent;
-            if (!textToSpeak || !textToSpeak.trim()) {
-                alert("読み上げるテキストがありません。");
-                return;
-            }
-
-            const utterance = new SpeechSynthesisUtterance(textToSpeak.trim());
-            utterance.lang = 'ja-JP';
-            utterance.rate = 1.0;
-
-            utterance.onend = resetTtsUI;
-            utterance.onerror = resetTtsUI;
-
-            setTimeout(() => {
-                window.speechSynthesis.speak(utterance);
-            }, 50);
-
-            ttsIcon.textContent = '⏹️';
-            ttsText.textContent = '停止';
-            ttsBtn.classList.replace('bg-indigo-50', 'bg-pink-100');
-            ttsBtn.classList.replace('text-indigo-700', 'text-pink-700');
-            ttsBtn.classList.replace('border-indigo-200', 'border-pink-200');
         });
 
         extractBtn.addEventListener('click', async function() {
