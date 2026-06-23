@@ -24,7 +24,6 @@
         select optgroup { font-weight: bold; color: #4338ca; background-color: #e0e7ff; }
         select option { color: #1f2937; background-color: #ffffff; font-weight: normal; }
 
-        /* 本棚の本の背表紙デザイン */
         .book-cover {
             box-shadow: -4px 0 10px rgba(0,0,0,0.1) inset, 2px 2px 5px rgba(0,0,0,0.2);
             transition: transform 0.2s;
@@ -36,13 +35,11 @@
             border-radius: 4px 0 0 4px;
         }
         
-        /* ドラッグ中の見た目 */
         .sortable-ghost { opacity: 0.4; background-color: #f3f4f6; }
         .sortable-drag { cursor: grabbing !important; }
         .grab-handle { cursor: grab; }
         .grab-handle:active { cursor: grabbing; }
 
-        /* タブを切り替えたときのアニメーション */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -58,7 +55,6 @@
     <div class="container mx-auto px-4 py-6">
 
         <div id="bookshelf-tab" class="fade-in">
-            
             <div id="large-grid-view">
                 <div class="flex justify-between items-end mb-4">
                     <h2 class="text-xl font-bold text-gray-800">📖 わたしの本棚</h2>
@@ -232,8 +228,8 @@
         // 状態管理と初期化
         // ==========================================
         let studyData = {};
-        let currentLargeFolder = null; // 現在開いている本の名前
-        let selectedSmallPath = null; // モーダルで選択したL, M, Sのパス
+        let currentLargeFolder = null; 
+        let selectedSmallPath = null; 
 
         window.currentTtsChunks = [];
         let isSpeaking = false;
@@ -243,15 +239,13 @@
         let sortableMediums = null;
         let sortableSmalls = [];
 
-        // 文字列から色を生成（本棚のカバー色）
         function stringToColor(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
             const h = hash % 360;
-            return `hsl(${h}, 70%, 55%)`; // 鮮やかで見やすい色
+            return `hsl(${h}, 70%, 55%)`; 
         }
 
-        // オブジェクトのキー順序を並び替えて新しいオブジェクトを返す
         function reorderObjectKeys(obj, newKeys) {
             const newObj = {};
             newKeys.forEach(k => {
@@ -278,12 +272,11 @@
             } else {
                 document.getElementById('add-data-tab').classList.remove('hidden');
                 document.getElementById('nav-add-data').classList.replace('text-gray-400', 'text-blue-600');
-                updateDataLists(); // Datalist更新
+                updateDataLists(); 
             }
             window.scrollTo(0, 0);
         }
 
-        // 本棚グリッドを表示
         function showBookshelfGrid() {
             currentLargeFolder = null;
             document.getElementById('large-grid-view').classList.remove('hidden');
@@ -291,7 +284,6 @@
             renderBookshelfGrid();
         }
 
-        // 本を開く（リスト表示）
         function openBook(largeFolderName) {
             currentLargeFolder = largeFolderName;
             document.getElementById('large-grid-view').classList.add('hidden');
@@ -303,6 +295,74 @@
         function closeStudyPage() {
             stopTtsPlayback();
             switchTab('bookshelf');
+        }
+
+        // ==========================================
+        // ★修正追加★ 学習画面のレンダリング
+        // ==========================================
+        function renderStudyPage(extractedTexts, questions, folderPathStr) {
+            document.getElementById('bookshelf-tab').classList.add('hidden');
+            document.getElementById('add-data-tab').classList.add('hidden');
+            
+            const textArea = document.getElementById('text-area');
+            const readableText = document.getElementById('readable-text');
+            const quizArea = document.getElementById('quiz-area');
+            const quizContainer = document.getElementById('quiz-container');
+            const currentFolderDisplay = document.getElementById('current-folder-display');
+
+            textArea.classList.add('hidden'); 
+            quizArea.classList.add('hidden');
+            quizContainer.innerHTML = '';
+            currentFolderDisplay.textContent = folderPathStr;
+
+            if (extractedTexts && extractedTexts.length > 0) {
+                readableText.innerHTML = extractedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
+                textArea.classList.remove('hidden');
+                buildTtsChunksAndUI();
+            }
+
+            if (questions && questions.length > 0) {
+                questions.forEach((q, index) => {
+                    let optionsHtml = '';
+                    if (q.options && q.options.length > 0) {
+                        optionsHtml = '<div class="space-y-2 mt-4">';
+                        q.options.forEach((opt) => {
+                            optionsHtml += `
+                                <label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-base sm:text-lg">
+                                    <input type="radio" name="q${index}" class="mr-2" /> ${opt}
+                                </label>
+                            `;
+                        });
+                        optionsHtml += '</div>';
+                    } else {
+                        optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-base sm:text-lg" placeholder="解答を入力" />`;
+                    }
+
+                    const questionBlock = `
+                        <div class="p-4 bg-gray-50 rounded-lg border">
+                            <h3 class="font-bold text-base sm:text-lg text-blue-900 leading-relaxed">Q${index + 1}. ${q.question_text}</h3>
+                            ${optionsHtml}
+                            <button class="mt-4 bg-blue-600 text-white font-bold py-2 px-4 rounded shadow" onclick="document.getElementById('ans${index}').classList.remove('hidden')">
+                                答えと解説を見る
+                            </button>
+                            <div id="ans${index}" class="hidden mt-4 p-4 bg-green-100 text-green-900 rounded border border-green-300">
+                                <p class="font-bold text-lg sm:text-xl mb-2">正解：${q.answer}</p>
+                                <hr class="border-green-300 mb-2" />
+                                <p class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">${q.explanation}</p>
+                            </div>
+                        </div>
+                    `;
+                    quizContainer.innerHTML += questionBlock;
+                });
+                quizArea.classList.remove('hidden');
+            }
+
+            document.getElementById('study-page').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function changeFontSize(sizeMode) {
+            document.getElementById('readable-text').className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`;
         }
 
         // ==========================================
@@ -332,7 +392,7 @@
             if (sortableBookshelf) sortableBookshelf.destroy();
             sortableBookshelf = new Sortable(grid, {
                 animation: 150,
-                delay: 200, // 長押し判定（スマホ用）
+                delay: 200, 
                 delayOnTouchOnly: true,
                 onEnd: async function () {
                     const newOrder = Array.from(grid.children).map(el => el.getAttribute('data-key'));
@@ -381,7 +441,6 @@
                 container.insertAdjacentHTML('beforeend', mediumHTML);
             });
 
-            // 中フォルダのSortable
             if (sortableMediums) sortableMediums.destroy();
             sortableMediums = new Sortable(container, {
                 animation: 150,
@@ -394,7 +453,6 @@
                 }
             });
 
-            // 小フォルダのSortable（中フォルダごとに設定）
             sortableSmalls.forEach(s => s.destroy());
             sortableSmalls = [];
             document.querySelectorAll('.small-list-container').forEach(listEl => {
@@ -436,7 +494,6 @@
             }, 300);
         }
 
-        // 通常学習スタート
         function startStudyNormal() {
             const { L, M, S } = selectedSmallPath;
             closeActionModal();
@@ -450,7 +507,6 @@
             renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
         }
 
-        // 新規作成スタート
         async function startStudyGenerate() {
             const { L, M, S } = selectedSmallPath;
             const records = studyData[L][M][S];
@@ -486,7 +542,6 @@
             }
         }
 
-        // 削除処理
         async function confirmDeleteFolder() {
             const { L, M, S } = selectedSmallPath;
             if (confirm(`「${S}」のデータを全て削除しますか？`)) {
@@ -500,12 +555,12 @@
                     if (Object.keys(studyData[L]).length === 0) {
                         delete studyData[L];
                         await syncDataWithServer();
-                        showBookshelfGrid(); // 本がなくなったので本棚へ戻る
+                        showBookshelfGrid(); 
                         return;
                     }
                     await syncDataWithServer();
                 }
-                renderFolderList(); // リスト再描画
+                renderFolderList(); 
             }
         }
 
@@ -538,8 +593,6 @@
             const latestData = await fetchLatestData();
             if (latestData) {
                 studyData = latestData;
-                
-                // 現在の画面状態に応じて再描画
                 if (!document.getElementById('bookshelf-tab').classList.contains('hidden')) {
                     if (currentLargeFolder) renderFolderList();
                     else renderBookshelfGrid();
@@ -574,12 +627,10 @@
             studyData[large][medium][small].push(data);
             
             await syncDataWithServer();
-            // 自動的にスキャンタブから本棚へ遷移して表示
             switchTab('bookshelf');
             openBook(large);
         }
 
-        // 初期ロード
         loadDataFromServer();
         setInterval(loadDataFromServer, 30000);
 
@@ -588,7 +639,7 @@
         // ==========================================
         function buildTtsChunksAndUI() {
             window.currentTtsChunks = [];
-            ttsModeSelect.innerHTML = '<option value="all">すべて読上</option>';
+            document.getElementById('tts-mode').innerHTML = '<option value="all">すべて読上</option>';
             let currentChunkText = "", currentChunkTitle = "ページ上部";
             const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
             let node;
@@ -608,31 +659,37 @@
             if (window.currentTtsChunks.length > 1) {
                 const groupFrom = document.createElement('optgroup'); groupFrom.label = "▼ ここから最後まで ▼";
                 window.currentTtsChunks.forEach((c, i) => groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`);
-                ttsModeSelect.appendChild(groupFrom);
+                document.getElementById('tts-mode').appendChild(groupFrom);
                 const groupOnly = document.createElement('optgroup'); groupOnly.label = "▼ この部分のみ ▼";
                 window.currentTtsChunks.forEach((c, i) => groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`);
-                ttsModeSelect.appendChild(groupOnly);
+                document.getElementById('tts-mode').appendChild(groupOnly);
             }
         }
 
         function resetTtsUI() {
-            ttsIcon.textContent = '🔊'; ttsText.textContent = '再生';
-            ttsPlayerContainer.classList.replace('bg-pink-50', 'bg-indigo-50');
-            ttsPlayerContainer.classList.replace('border-pink-300', 'border-indigo-200');
-            ttsBtn.classList.replace('text-pink-700', 'text-indigo-700');
-            ttsBtn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100');
-            ttsModeSelect.classList.replace('text-pink-700', 'text-indigo-700');
-            ttsModeSelect.classList.replace('border-pink-300', 'border-indigo-200');
+            document.getElementById('tts-icon').textContent = '🔊'; document.getElementById('tts-text').textContent = '再生';
+            const container = document.getElementById('tts-player-container');
+            const btn = document.getElementById('tts-btn');
+            const mode = document.getElementById('tts-mode');
+            container.classList.replace('bg-pink-50', 'bg-indigo-50');
+            container.classList.replace('border-pink-300', 'border-indigo-200');
+            btn.classList.replace('text-pink-700', 'text-indigo-700');
+            btn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100');
+            mode.classList.replace('text-pink-700', 'text-indigo-700');
+            mode.classList.replace('border-pink-300', 'border-indigo-200');
         }
 
         function setTtsUIPlaying() {
-            ttsIcon.textContent = '⏹️'; ttsText.textContent = '停止';
-            ttsPlayerContainer.classList.replace('bg-indigo-50', 'bg-pink-50');
-            ttsPlayerContainer.classList.replace('border-indigo-200', 'border-pink-300');
-            ttsBtn.classList.replace('text-indigo-700', 'text-pink-700');
-            ttsBtn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100');
-            ttsModeSelect.classList.replace('text-indigo-700', 'text-pink-700');
-            ttsModeSelect.classList.replace('border-indigo-200', 'border-pink-300');
+            document.getElementById('tts-icon').textContent = '⏹️'; document.getElementById('tts-text').textContent = '停止';
+            const container = document.getElementById('tts-player-container');
+            const btn = document.getElementById('tts-btn');
+            const mode = document.getElementById('tts-mode');
+            container.classList.replace('bg-indigo-50', 'bg-pink-50');
+            container.classList.replace('border-indigo-200', 'border-pink-300');
+            btn.classList.replace('text-indigo-700', 'text-pink-700');
+            btn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100');
+            mode.classList.replace('text-indigo-700', 'text-pink-700');
+            mode.classList.replace('border-indigo-200', 'border-pink-300');
         }
 
         function stopTtsPlayback() { isSpeaking = false; ttsQueue = []; window.speechSynthesis.cancel(); resetTtsUI(); }
@@ -649,14 +706,14 @@
             setTimeout(() => window.speechSynthesis.speak(utterance), 50);
         }
 
-        ttsBtn.addEventListener('click', function() {
+        document.getElementById('tts-btn').addEventListener('click', function() {
             if (isSpeaking) { stopTtsPlayback(); return; }
-            let textToSpeak = ""; const mode = ttsModeSelect.value;
+            let textToSpeak = ""; const mode = document.getElementById('tts-mode').value;
             if (mode === 'all') textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n');
             else if (mode.startsWith('from_')) textToSpeak = window.currentTtsChunks.slice(parseInt(mode.split('_')[1])).map(c => c.text).join('\n\n');
             else if (mode.startsWith('only_')) textToSpeak = window.currentTtsChunks[parseInt(mode.split('_')[1])].text;
 
-            if (!textToSpeak || !textToSpeak.trim()) textToSpeak = readableText.innerText || readableText.textContent;
+            if (!textToSpeak || !textToSpeak.trim()) textToSpeak = document.getElementById('readable-text').innerText || document.getElementById('readable-text').textContent;
             if (!textToSpeak || !textToSpeak.trim()) return alert("読み上げるテキストがありません。");
 
             textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2');
@@ -735,7 +792,6 @@
                 await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ });
                 
                 imageInput.value = ''; fileNameDisplay.innerHTML = '';
-                // renderStudyPageは saveToFolder側で本棚へ遷移するためここでは呼ばない
             } catch (error) { alert("失敗しました。\n詳細: " + error.message); } 
             finally { extractBtn.textContent = "AIに送信して解析・保存スタート"; extractBtn.disabled = false; extractBtn.classList.replace('bg-gray-400', 'bg-blue-600'); }
         });
