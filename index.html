@@ -118,13 +118,27 @@
                     </div>
                 </div>
 
+                <div class="mb-2 mt-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">アップロードするファイル</label>
+                    <div class="flex space-x-3 mb-3">
+                        <label class="flex items-center cursor-pointer py-2 px-4 bg-white border-2 border-gray-300 rounded-lg shadow-sm flex-1 justify-center hover:bg-blue-50 transition [&:has(input:checked)]:border-blue-500 [&:has(input:checked)]:bg-blue-50 [&:has(input:checked)]:text-blue-700 font-bold text-gray-600">
+                            <input type="radio" name="file-type" value="image" class="hidden" checked onchange="toggleFileType()" /> 📸 写真
+                        </label>
+                        <label class="flex items-center cursor-pointer py-2 px-4 bg-white border-2 border-gray-300 rounded-lg shadow-sm flex-1 justify-center hover:bg-blue-50 transition [&:has(input:checked)]:border-blue-500 [&:has(input:checked)]:bg-blue-50 [&:has(input:checked)]:text-blue-700 font-bold text-gray-600">
+                            <input type="radio" name="file-type" value="pdf" class="hidden" onchange="toggleFileType()" /> 📄 PDF
+                        </label>
+                    </div>
+                </div>
+
                 <div class="mb-6">
                     <div class="relative flex flex-col items-center justify-center w-full h-24 border-2 border-blue-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition overflow-hidden">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
-                            <p class="text-sm text-blue-600 font-semibold">📸 写真・PDFを選択</p>
-                            <p class="text-xs text-gray-500 mt-1">複数選択可。PDFも読み込めます</p>
+                            <p id="upload-prompt-text" class="text-sm text-blue-600 font-semibold">📸 複数枚の写真を選択</p>
+                            <p id="upload-prompt-subtext" class="text-xs text-gray-500 mt-1">いつものアルバムから選べます</p>
                         </div>
-                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*,application/pdf" multiple />
+                        
+                        <input type="file" id="image-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" multiple />
+                        <input type="file" id="pdf-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 hidden" accept="application/pdf" multiple />
                     </div>
                     <div id="file-name" class="text-xs text-center text-green-600 font-bold mt-2 min-h-[1rem]"></div>
                 </div>
@@ -317,10 +331,8 @@
             currentFolderDisplay.textContent = folderPathStr;
 
             if (extractedTexts && extractedTexts.length > 0) {
-                // 【変更】無駄な改行や巨大な空白を強制的に詰める処理
                 const cleanedTexts = extractedTexts.map(t => {
                     if(!t) return '';
-                    // 連続する空行を最大1行に制限し、前後の空白を削除
                     return t.replace(/(\r\n|\n|\r)/g, '\n')
                             .replace(/\n{3,}/g, '\n\n')
                             .trim()
@@ -385,7 +397,7 @@
             
             const largeFolders = Object.keys(studyData);
             if (largeFolders.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>スキャンから追加してください。</div>';
+                grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>追加画面からスキャンしてください。</div>';
                 return;
             }
 
@@ -511,7 +523,7 @@
             const records = studyData[L][M][S];
             let allTexts = [], allQuestions = [];
             records.forEach(r => {
-                if (r.extracted_text) allTexts.push(r.extracted_text); // 改行を<br>に変えるのはrenderStudyPage内で行う
+                if (r.extracted_text) allTexts.push(r.extracted_text);
                 if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions);
                 if (r.questions) allQuestions = allQuestions.concat(r.questions);
             });
@@ -736,8 +748,32 @@
         });
 
         // ==========================================
-        // 画像・PDFアップロード・解析
+        // ★修正追加★ ファイル入力の切り替え・解析処理
         // ==========================================
+        function toggleFileType() {
+            const fileType = document.querySelector('input[name="file-type"]:checked').value;
+            const imgInput = document.getElementById('image-upload');
+            const pdfInput = document.getElementById('pdf-upload');
+            const promptText = document.getElementById('upload-prompt-text');
+            const promptSubText = document.getElementById('upload-prompt-subtext');
+
+            if (fileType === 'image') {
+                imgInput.classList.remove('hidden');
+                pdfInput.classList.add('hidden');
+                promptText.textContent = "📸 複数枚の写真を選択";
+                promptSubText.textContent = "いつものアルバムから選べます";
+            } else {
+                imgInput.classList.add('hidden');
+                pdfInput.classList.remove('hidden');
+                promptText.textContent = "📄 PDFファイルを選択";
+                promptSubText.textContent = "端末内のPDFを選べます";
+            }
+            
+            imgInput.value = '';
+            pdfInput.value = '';
+            document.getElementById('file-name').innerHTML = '';
+        }
+
         const compressImage = async (file, maxWidth = 1200) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader(); reader.readAsDataURL(file);
@@ -759,25 +795,34 @@
             });
         };
 
-        const imageInput = document.getElementById('image-upload'), fileNameDisplay = document.getElementById('file-name'), extractBtn = document.getElementById('extract-btn');
+        const imageInput = document.getElementById('image-upload');
+        const pdfInput = document.getElementById('pdf-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const extractBtn = document.getElementById('extract-btn');
 
-        imageInput.addEventListener('change', function(e) {
+        function handleFileSelect(e) {
             if(e.target.files.length > 0) {
                 const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>');
-                // 【変更】PDF対応に合わせて表記を変更
-                fileNameDisplay.innerHTML = `📄 ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
+                const typeIcon = e.target.id === 'image-upload' ? '📸' : '📄';
+                fileNameDisplay.innerHTML = `${typeIcon} ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
             } else fileNameDisplay.innerHTML = '';
-        });
+        }
+
+        imageInput.addEventListener('change', handleFileSelect);
+        pdfInput.addEventListener('change', handleFileSelect);
 
         extractBtn.addEventListener('click', async function() {
-            if(!imageInput.files.length) return alert("ファイルを選択してください！");
+            const fileType = document.querySelector('input[name="file-type"]:checked').value;
+            const activeInput = fileType === 'image' ? imageInput : pdfInput;
+
+            if(!activeInput.files.length) return alert("ファイルを選択してください！");
             
             const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim();
             const mode = document.querySelector('input[name="scan-mode"]:checked').value;
             
             extractBtn.textContent = "⚙️ ファイルを準備中..."; extractBtn.disabled = true; extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
             
-            let filesArray = Array.from(imageInput.files).sort((a, b) => a.name.localeCompare(b.name));
+            let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name));
             let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = [];
             for (let i = 0; i < filesArray.length; i++) {
                 if (mode === "workbook") qPerFile.push(1);
@@ -790,12 +835,11 @@
                     const file = filesArray[i];
                     let fileToSend = file;
 
-                    // 【変更】写真なら圧縮、PDFならそのまま送信するロジック
                     if (file.type.startsWith('image/')) {
                         extractBtn.textContent = `⚙️ 画像を圧縮中... (${i+1}/${filesArray.length}枚目)`;
                         fileToSend = await compressImage(file);
                     } else if (file.type === 'application/pdf') {
-                        if (file.size > 15 * 1024 * 1024) { // PDFが15MBを超える場合の安全ストッパー
+                        if (file.size > 15 * 1024 * 1024) { 
                             throw new Error(`PDFのサイズが大きすぎます (${file.name})。15MB以下のPDFを選択してください。`);
                         }
                     } else {
@@ -815,7 +859,7 @@
                 }
                 await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ });
                 
-                imageInput.value = ''; fileNameDisplay.innerHTML = '';
+                activeInput.value = ''; fileNameDisplay.innerHTML = '';
             } catch (error) { alert("失敗しました。\n詳細: " + error.message); } 
             finally { extractBtn.textContent = "AIに送信して解析・保存スタート"; extractBtn.disabled = false; extractBtn.classList.replace('bg-gray-400', 'bg-blue-600'); }
         });
