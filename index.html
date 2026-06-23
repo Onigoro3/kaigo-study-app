@@ -20,7 +20,6 @@
         #readable-text tr:nth-child(even) { background-color: #f9fafb; }
         #readable-text tr:hover { background-color: #f3f4f6; }
 
-        /* ドロップダウンの見た目調整用 */
         select optgroup { font-weight: bold; color: #4338ca; background-color: #e0e7ff; }
         select option { color: #1f2937; background-color: #ffffff; font-weight: normal; }
     </style>
@@ -188,10 +187,9 @@
     <script>
         let studyData = {};
         
-        // --- 読み上げ用グローバル変数 ---
-        window.currentTtsChunks = []; // 見出しごとに分割したテキストデータ
+        window.currentTtsChunks = [];
         let isSpeaking = false;
-        let ttsQueue = []; // 長文分割再生用のキュー
+        let ttsQueue = []; 
 
         async function fetchLatestData() {
             try {
@@ -347,7 +345,6 @@
         const quizContainer = document.getElementById('quiz-container');
         const currentFolderDisplay = document.getElementById('current-folder-display');
 
-        // 音声UIコンポーネント
         const ttsBtn = document.getElementById('tts-btn');
         const ttsIcon = document.getElementById('tts-icon');
         const ttsText = document.getElementById('tts-text');
@@ -374,8 +371,6 @@
             if (extractedTexts.length > 0) {
                 readableText.innerHTML = extractedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
                 textArea.classList.remove('hidden');
-                
-                // 【新規】レンダリング後に見出しを解析してセクションリストを作成する
                 buildTtsChunksAndUI();
             }
 
@@ -420,9 +415,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // ==========================================
-        // 【新規】テキストを見出しごとに分解してプレイリストを作る関数
-        // ==========================================
         function buildTtsChunksAndUI() {
             window.currentTtsChunks = [];
             ttsModeSelect.innerHTML = '<option value="all">すべて読上</option>';
@@ -430,31 +422,25 @@
             let currentChunkText = "";
             let currentChunkTitle = "ページ上部";
             
-            // DOMツリーを巡回してテキストと見出しを収集
             const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
             let node;
             
             while(node = walker.nextNode()) {
                 if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) {
-                    // 見出しを見つけたら、それまでのテキストを一つの区切りとして保存
                     if (currentChunkText.trim()) {
                         window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
                     }
-                    // 新しい区切りのタイトルを設定
                     let rawTitle = (node.innerText || node.textContent).trim();
                     currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle;
-                    // 見出し自体も読み上げテキストに含める
                     currentChunkText = rawTitle + "。\n";
                 } else if (node.nodeType === Node.TEXT_NODE) {
                     currentChunkText += node.textContent + " ";
                 }
             }
-            // 最後の塊を保存
             if (currentChunkText.trim()) {
                 window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
             }
 
-            // 見出しが複数ある場合のみ、高度なドロップダウンメニューを生成する
             if (window.currentTtsChunks.length > 1) {
                 const groupFrom = document.createElement('optgroup');
                 groupFrom.label = "▼ ここから最後まで ▼";
@@ -472,9 +458,6 @@
             }
         }
 
-        // ==========================================
-        // 【新規】スマホでも止まらない堅牢な読み上げエンジン
-        // ==========================================
         function resetTtsUI() {
             ttsIcon.textContent = '🔊';
             ttsText.textContent = '再生';
@@ -510,19 +493,26 @@
                 return;
             }
             
-            const text = ttsQueue.shift();
+            let text = ttsQueue.shift();
+
+            // 【改行対策】箇条書きや表組みなど、文末に句読点がない場合は「。」を補う
+            // これにより、音声エンジンが「文の終わり」と認識し、自然にイントネーションが下がります。
+            if (!/[。！？.!?]$/.test(text)) {
+                text += "。";
+            }
+            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
             utterance.rate = 1.0;
             
             utterance.onend = () => {
-                if (isSpeaking) playNextTtsQueue(); // 次のキューを再生
+                // 【改行対策】0.4秒の「息継ぎ（間）」を作ってから次の文を再生する
+                if (isSpeaking) setTimeout(playNextTtsQueue, 400);
             };
             utterance.onerror = (e) => {
-                if (isSpeaking) playNextTtsQueue(); // エラー時はスキップして次へ
+                if (isSpeaking) setTimeout(playNextTtsQueue, 400);
             };
             
-            // iOS対策でわずかに遅延させて発火
             setTimeout(() => window.speechSynthesis.speak(utterance), 50);
         }
 
@@ -535,7 +525,6 @@
             let textToSpeak = "";
             const mode = ttsModeSelect.value;
 
-            // ドロップダウンの選択に応じてテキストを結合
             if (mode === 'all') {
                 textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n');
             } else if (mode.startsWith('from_')) {
@@ -546,7 +535,6 @@
                 textToSpeak = window.currentTtsChunks[idx].text;
             }
 
-            // 万が一解析に失敗していた場合のフォールバック
             if (!textToSpeak || !textToSpeak.trim()) {
                 textToSpeak = readableText.innerText || readableText.textContent;
             }
@@ -556,16 +544,14 @@
                 return;
             }
 
-            // フリーズ対策：文章を句読点や改行で細かく分割し、キュー（待ち行列）に入れる
             ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak];
             ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0);
 
             isSpeaking = true;
             setTtsUIPlaying();
             window.speechSynthesis.cancel();
-            playNextTtsQueue(); // プレイリスト再生開始
+            playNextTtsQueue(); 
         });
-        // ==========================================
 
         function loadSavedData() {
             const L = selLarge.value, M = selMedium.value, S = selSmall.value;
