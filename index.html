@@ -109,9 +109,25 @@
 
                 <div class="space-y-3">
                     <button onclick="loadSavedData()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded shadow transition">
-                        この範囲を復習する
+                        保存されている問題で復習する
                     </button>
-                    <button onclick="deleteSelectedFolder()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-4 rounded transition">
+                    
+                    <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                        <label class="block text-xs font-bold text-green-800 mb-2">✨ 登録済みのテキストから新しく問題を作る</label>
+                        <div class="flex space-x-2">
+                            <select id="review-question-count" class="border border-green-300 rounded p-2 focus:border-green-500 bg-white text-sm flex-grow">
+                                <option value="3">3問（サクッと）</option>
+                                <option value="5">5問（標準）</option>
+                                <option value="7">7問（しっかり）</option>
+                                <option value="10">10問（がっつり）</option>
+                            </select>
+                            <button onclick="generateNewQuizFromSavedData()" id="generate-review-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition text-sm">
+                                新しく作る
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="deleteSelectedFolder()" class="w-full mt-4 bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-4 rounded transition">
                         選択した小フォルダを削除
                     </button>
                 </div>
@@ -179,7 +195,6 @@
             return null;
         }
 
-        // 【修正】 エラー時に画面にアラートを出すように強化
         async function syncDataWithServer() {
             try {
                 const response = await fetch("/api/save-data", {
@@ -437,6 +452,60 @@
             renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
         }
 
+        // 【新規追加】テキストから新しい問題を作成する機能
+        async function generateNewQuizFromSavedData() {
+            const L = selLarge.value, M = selMedium.value, S = selSmall.value;
+            if (!L || !M || !S) return alert("復習する小フォルダまで選択してください。");
+
+            const records = studyData[L][M][S];
+            let allTexts = [];
+            records.forEach(record => {
+                if (record.extracted_text) allTexts.push(record.extracted_text);
+            });
+
+            const combinedText = allTexts.join("\n\n");
+            if (!combinedText.trim()) {
+                return alert("このフォルダには読み取ったテキストデータがないため、新しい問題を作成できません。");
+            }
+
+            const numQuestions = document.getElementById('review-question-count').value;
+            const btn = document.getElementById('generate-review-btn');
+
+            btn.textContent = "⚙️ AIが作成中...";
+            btn.disabled = true;
+            btn.classList.replace('bg-green-600', 'bg-gray-400');
+
+            try {
+                const response = await fetch("/api/generate-quiz", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        text: combinedText, 
+                        num_questions: parseInt(numQuestions) 
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || "問題の生成に失敗しました");
+                }
+
+                const data = await response.json();
+                const newQuestions = data.generated_questions || [];
+
+                // 作成した問題を使って学習画面を表示
+                let formattedTexts = allTexts.map(t => t.replace(/\n/g, '<br />'));
+                renderStudyPage(formattedTexts, newQuestions, `📁 ${L} > ${M} > ${S} (新規作成: ${numQuestions}問)`);
+
+            } catch (error) {
+                alert("エラーが発生しました: " + error.message);
+            } finally {
+                btn.textContent = "新しく作る";
+                btn.disabled = false;
+                btn.classList.replace('bg-gray-400', 'bg-green-600');
+            }
+        }
+
         const compressImage = async (file, maxWidth = 1200) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -476,7 +545,6 @@
             }
         });
 
-        // 【修正】 音声読み上げの安定化処理
         function resetTtsUI() {
             ttsIcon.textContent = '🔊';
             ttsText.textContent = '読上';
@@ -486,7 +554,6 @@
         }
 
         ttsBtn.addEventListener('click', function() {
-            // 再生前の強制リセット（スマホの詰まりバグ対策）
             window.speechSynthesis.cancel();
 
             if (ttsIcon.textContent === '⏹️') {
@@ -494,7 +561,6 @@
                 return;
             }
 
-            // HTMLタグ（表やマーカー）を除去して純粋なテキストのみを抽出
             const textToSpeak = readableText.innerText || readableText.textContent;
             if (!textToSpeak || !textToSpeak.trim()) {
                 alert("読み上げるテキストがありません。");
@@ -508,7 +574,6 @@
             utterance.onend = resetTtsUI;
             utterance.onerror = resetTtsUI;
 
-            // 少し遅延させないとiOSで発火しない問題の対策
             setTimeout(() => {
                 window.speechSynthesis.speak(utterance);
             }, 50);

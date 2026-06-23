@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 import uvicorn
-# 【新規】Supabaseのインポート
 from supabase import create_client, Client
 
 load_dotenv()
@@ -30,7 +29,6 @@ if not API_KEY:
 
 client = genai.Client(api_key=API_KEY)
 
-# 【新規】Supabaseクライアントの初期化設定
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -49,15 +47,21 @@ class StudyAnalyzeResponse(BaseModel):
     extracted_text: str
     generated_questions: List[QuizQuestion]
 
-# 【新規】データ受取用の形
 class SaveDataRequest(BaseModel):
     data: Dict[str, Any]
+
+# 【新規追加】テキストから問題を作成するためのデータ構造
+class GenerateQuizRequest(BaseModel):
+    text: str
+    num_questions: int
+
+class QuizOnlyResponse(BaseModel):
+    generated_questions: List[QuizQuestion]
 
 @app.get("/")
 async def serve_frontend():
     return FileResponse("index.html")
 
-# 【新規】Supabaseから全端末共通のデータを読み込む
 @app.get("/api/load-data")
 async def load_data():
     if not supabase_client:
@@ -70,7 +74,6 @@ async def load_data():
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
-# 【新規】全端末共通のデータをSupabaseへ保存・上書きする
 @app.post("/api/save-data")
 async def save_data(req: SaveDataRequest):
     if not supabase_client:
@@ -133,7 +136,39 @@ async def analyze_image(
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
+# 【新規追加】保存済みのテキストから新しい問題を作成するAPI
+@app.post("/api/generate-quiz")
+async def generate_quiz_from_text(req: GenerateQuizRequest):
+    try:
+        prompt = f"""
+        以下の学習テキストの内容に基づいて、学習内容を復習・確認するためのオリジナル問題を {req.num_questions} 問作成してください。
+        必ず指定されたデータ構造（generated_questions）に格納して返答してください。
+
+        【学習テキスト】
+        {req.text}
+        """
+
+        response = client.models.generate_content(
+            model='gemini-2.5-pro',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=QuizOnlyResponse,
+                temperature=0.3, # 少しだけ柔軟性を持たせる
+                max_output_tokens=8192,
+            )
+        )
+        
+        raw_text = response.text
+        if not raw_text:
+            return JSONResponse(content={"error": "AIがテキストを生成できませんでした。"}, status_code=500)
+
+        parsed_data = json.loads(raw_text)
+        return JSONResponse(content=parsed_data)
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
 if __name__ == "__main__":
-    # Renderが指定するポート番号を自動で取得する（無ければ8000を使う）
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
