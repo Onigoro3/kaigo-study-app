@@ -190,9 +190,7 @@
             </div>
         </div>
 
-    </div>
-
-    <div id="practice-tab" class="hidden fade-in h-[calc(100vh-8rem)]">
+        <div id="practice-tab" class="hidden fade-in h-[calc(100vh-8rem)]">
             <div class="flex h-full rounded-xl overflow-hidden shadow-lg border border-gray-300">
                 
                 <div class="w-1/3 bg-white flex flex-col border-r border-gray-300">
@@ -271,41 +269,8 @@
                 </div>
             </div>
         </div>
-        ```
 
-### 3. JavaScriptのタブ制御・様式切り替えロジック
-
-追加した画面を制御するためのJavaScriptを追記します。
-
-#### A: `switchTab` 関数の上書き
-`index.html` の **300行目付近** にある `switchTab` 関数を以下のコードでまるごと上書きしてください。
-
-```javascript
-        function switchTab(tabName) {
-            document.getElementById('bookshelf-tab').classList.add('hidden');
-            document.getElementById('add-data-tab').classList.add('hidden');
-            document.getElementById('study-page').classList.add('hidden');
-            document.getElementById('practice-tab').classList.add('hidden'); // 新規追加
-
-            document.getElementById('nav-bookshelf').classList.replace('text-blue-600', 'text-gray-400');
-            document.getElementById('nav-add-data').classList.replace('text-blue-600', 'text-gray-400');
-            document.getElementById('nav-practice').classList.replace('text-blue-600', 'text-gray-400'); // 新規追加
-
-            if (tabName === 'bookshelf') {
-                document.getElementById('bookshelf-tab').classList.remove('hidden');
-                document.getElementById('nav-bookshelf').classList.replace('text-gray-400', 'text-blue-600');
-                if (!currentLargeFolder) showBookshelfGrid(); 
-            } else if (tabName === 'add-data') {
-                document.getElementById('add-data-tab').classList.remove('hidden');
-                document.getElementById('nav-add-data').classList.replace('text-gray-400', 'text-blue-600');
-                updateDataLists(); 
-            } else if (tabName === 'practice') {
-                // PC実践タブの表示処理
-                document.getElementById('practice-tab').classList.remove('hidden');
-                document.getElementById('nav-practice').classList.replace('text-gray-400', 'text-blue-600');
-            }
-            window.scrollTo(0, 0);
-        }
+    </div>
 
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
         <div class="flex justify-around items-center h-16">
@@ -321,7 +286,7 @@
                 <span class="text-2xl mb-1">💻</span>
                 <span class="text-[10px] font-bold">PC実践</span>
             </button>
-            </div>
+        </div>
     </div>
 
     <div id="action-modal" class="fixed inset-0 bg-black/50 z-[60] hidden flex-col justify-end">
@@ -395,18 +360,23 @@
             document.getElementById('bookshelf-tab').classList.add('hidden');
             document.getElementById('add-data-tab').classList.add('hidden');
             document.getElementById('study-page').classList.add('hidden');
+            document.getElementById('practice-tab').classList.add('hidden'); 
 
             document.getElementById('nav-bookshelf').classList.replace('text-blue-600', 'text-gray-400');
             document.getElementById('nav-add-data').classList.replace('text-blue-600', 'text-gray-400');
+            document.getElementById('nav-practice').classList.replace('text-blue-600', 'text-gray-400'); 
 
             if (tabName === 'bookshelf') {
                 document.getElementById('bookshelf-tab').classList.remove('hidden');
                 document.getElementById('nav-bookshelf').classList.replace('text-gray-400', 'text-blue-600');
                 if (!currentLargeFolder) showBookshelfGrid(); 
-            } else {
+            } else if (tabName === 'add-data') {
                 document.getElementById('add-data-tab').classList.remove('hidden');
                 document.getElementById('nav-add-data').classList.replace('text-gray-400', 'text-blue-600');
                 updateDataLists(); 
+            } else if (tabName === 'practice') {
+                document.getElementById('practice-tab').classList.remove('hidden');
+                document.getElementById('nav-practice').classList.replace('text-gray-400', 'text-blue-600');
             }
             window.scrollTo(0, 0);
         }
