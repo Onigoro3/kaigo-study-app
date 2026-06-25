@@ -24,9 +24,16 @@
         select optgroup { font-weight: bold; color: #4338ca; background-color: #e0e7ff; }
         select option { color: #1f2937; background-color: #ffffff; font-weight: normal; }
 
-        .book-cover { box-shadow: -4px 0 10px rgba(0,0,0,0.1) inset, 2px 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .book-cover {
+            box-shadow: -4px 0 10px rgba(0,0,0,0.1) inset, 2px 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
         .book-cover:active { transform: scale(0.95); }
-        .book-spine { position: absolute; top: 0; bottom: 0; left: 0; width: 10px; background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(0,0,0,0.1)); border-radius: 4px 0 0 4px; }
+        .book-spine {
+            position: absolute; top: 0; bottom: 0; left: 0; width: 10px;
+            background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(0,0,0,0.1));
+            border-radius: 4px 0 0 4px;
+        }
         
         .sortable-ghost { opacity: 0.4; background-color: #f3f4f6; }
         .sortable-drag { cursor: grabbing !important; }
@@ -37,9 +44,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* 実践フォーム用のテーブルスタイル */
-        .kaigo-table { w-full border-collapse border border-black text-xs mb-4; }
-        .kaigo-table th { border: 1px solid black; background-color: #f3f4f6; padding: 4px; font-weight: normal; text-align: center; }
-        .kaigo-table td { border: 1px solid black; padding: 0; }
+        .kaigo-table { border-collapse: collapse; border: 1px solid black; width: 100%; font-size: 0.75rem; margin-bottom: 1rem; }
+        .kaigo-table th, .kaigo-table td { border: 1px solid black; padding: 2px; }
+        .kaigo-table th { background-color: #f3f4f6; text-align: left; font-weight: normal; }
         .kaigo-input { width: 100%; height: 100%; padding: 4px; outline: none; border: none; font-size: 0.75rem; background: transparent; }
         .kaigo-input:focus { background-color: #e0f2fe; }
     </style>
@@ -561,15 +568,21 @@
         <div class="bg-white rounded-t-2xl p-6 w-full max-w-md mx-auto transform transition-transform translate-y-full" id="action-modal-content">
             <h3 id="modal-folder-title" class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 truncate"></h3>
             <div class="space-y-3">
-                <button onclick="startStudyNormal()" class="w-full flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"><span class="text-xl mr-3">📖</span><span class="font-bold text-blue-800">保存されているデータで学習する</span></button>
+                <button onclick="startStudyNormal()" class="w-full flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                    <span class="text-xl mr-3">📖</span><span class="font-bold text-blue-800">保存されているデータで学習する</span>
+                </button>
                 <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div class="flex items-center mb-2"><span class="text-xl mr-3">✨</span><span class="font-bold text-green-800">AIに新しく問題を作らせる</span></div>
                     <div class="flex space-x-2 pl-8">
-                        <select id="modal-question-count" class="border border-green-300 rounded py-1 px-2 text-sm flex-grow"><option value="3">3問</option><option value="5">5問</option><option value="7">7問</option><option value="10">10問</option></select>
+                        <select id="modal-question-count" class="border border-green-300 rounded py-1 px-2 text-sm flex-grow">
+                            <option value="3">3問</option><option value="5">5問</option><option value="7">7問</option><option value="10">10問</option>
+                        </select>
                         <button onclick="startStudyGenerate()" id="modal-generate-btn" class="bg-green-600 text-white font-bold py-1 px-4 rounded text-sm hover:bg-green-700">作成</button>
                     </div>
                 </div>
-                <button onclick="confirmDeleteFolder()" class="w-full flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition mt-4"><span class="text-xl mr-3">🗑️</span><span class="font-bold text-red-700">この小フォルダを削除する</span></button>
+                <button onclick="confirmDeleteFolder()" class="w-full flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition mt-4">
+                    <span class="text-xl mr-3">🗑️</span><span class="font-bold text-red-700">この小フォルダを削除する</span>
+                </button>
             </div>
             <button onclick="closeActionModal()" class="w-full mt-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg">キャンセル</button>
         </div>
@@ -599,7 +612,7 @@
             return newObj;
         }
 
-        // タブ切り替え
+        // タブ切り替え処理
         function switchTab(tabName) {
             document.getElementById('bookshelf-tab').classList.add('hidden');
             document.getElementById('add-data-tab').classList.add('hidden');
@@ -625,21 +638,45 @@
             window.scrollTo(0, 0);
         }
 
-        function showBookshelfGrid() { currentLargeFolder = null; document.getElementById('large-grid-view').classList.remove('hidden'); document.getElementById('folder-list-view').classList.add('hidden'); renderBookshelfGrid(); }
-        function openBook(largeFolderName) { currentLargeFolder = largeFolderName; document.getElementById('large-grid-view').classList.add('hidden'); document.getElementById('folder-list-view').classList.remove('hidden'); document.getElementById('current-book-title').textContent = `📖 ${largeFolderName}`; renderFolderList(); }
-        function closeStudyPage() { stopTtsPlayback(); switchTab('bookshelf'); }
+        function showBookshelfGrid() { 
+            currentLargeFolder = null; 
+            document.getElementById('large-grid-view').classList.remove('hidden'); 
+            document.getElementById('folder-list-view').classList.add('hidden'); 
+            renderBookshelfGrid(); 
+        }
 
-        // 学習画面レンダリング
+        function openBook(largeFolderName) { 
+            currentLargeFolder = largeFolderName; 
+            document.getElementById('large-grid-view').classList.add('hidden'); 
+            document.getElementById('folder-list-view').classList.remove('hidden'); 
+            document.getElementById('current-book-title').textContent = `📖 ${largeFolderName}`; 
+            renderFolderList(); 
+        }
+
+        function closeStudyPage() { 
+            stopTtsPlayback(); 
+            switchTab('bookshelf'); 
+        }
+
+        // 学習画面レンダリング（据え置き）
         function renderStudyPage(extractedTexts, questions, folderPathStr) {
             document.getElementById('bookshelf-tab').classList.add('hidden');
             document.getElementById('add-data-tab').classList.add('hidden');
-            const textArea = document.getElementById('text-area'); const readableText = document.getElementById('readable-text'); const quizArea = document.getElementById('quiz-area'); const quizContainer = document.getElementById('quiz-container');
-            textArea.classList.add('hidden'); quizArea.classList.add('hidden'); quizContainer.innerHTML = ''; document.getElementById('current-folder-display').textContent = folderPathStr;
+            const textArea = document.getElementById('text-area'); 
+            const readableText = document.getElementById('readable-text'); 
+            const quizArea = document.getElementById('quiz-area'); 
+            const quizContainer = document.getElementById('quiz-container');
+            
+            textArea.classList.add('hidden'); 
+            quizArea.classList.add('hidden'); 
+            quizContainer.innerHTML = ''; 
+            document.getElementById('current-folder-display').textContent = folderPathStr;
 
             if (extractedTexts && extractedTexts.length > 0) {
                 const cleanedTexts = extractedTexts.map(t => t ? t.replace(/(\r\n|\n|\r)/g, '\n').replace(/\n{3,}/g, '\n\n').trim().replace(/\n/g, '<br />') : '').filter(t => t !== '');
                 readableText.innerHTML = cleanedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
-                textArea.classList.remove('hidden'); buildTtsChunksAndUI();
+                textArea.classList.remove('hidden'); 
+                buildTtsChunksAndUI();
             }
 
             if (questions && questions.length > 0) {
@@ -647,9 +684,13 @@
                     let optionsHtml = '';
                     if (q.options && q.options.length > 0) {
                         optionsHtml = '<div class="space-y-2 mt-4">';
-                        q.options.forEach((opt) => { optionsHtml += `<label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-base sm:text-lg"><input type="radio" name="q${index}" class="mr-2" /> ${opt}</label>`; });
+                        q.options.forEach((opt) => { 
+                            optionsHtml += `<label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-base sm:text-lg"><input type="radio" name="q${index}" class="mr-2" /> ${opt}</label>`; 
+                        });
                         optionsHtml += '</div>';
-                    } else optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-base sm:text-lg" placeholder="解答を入力" />`;
+                    } else {
+                        optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-base sm:text-lg" placeholder="解答を入力" />`;
+                    }
                     
                     quizContainer.innerHTML += `
                         <div class="p-4 bg-gray-50 rounded-lg border">
@@ -660,16 +701,23 @@
                 });
                 quizArea.classList.remove('hidden');
             }
-            document.getElementById('study-page').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('study-page').classList.remove('hidden'); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function changeFontSize(sizeMode) { document.getElementById('readable-text').className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`; }
+        function changeFontSize(sizeMode) { 
+            document.getElementById('readable-text').className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`; 
+        }
 
-        // 本棚レンダリング
+        // 本棚レンダリング（据え置き）
         function renderBookshelfGrid() {
-            const grid = document.getElementById('bookshelf-grid'); grid.innerHTML = '';
+            const grid = document.getElementById('bookshelf-grid'); 
+            grid.innerHTML = '';
             const largeFolders = Object.keys(studyData);
-            if (largeFolders.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>追加画面からスキャンしてください。</div>'; return; }
+            if (largeFolders.length === 0) { 
+                grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>追加画面からスキャンしてください。</div>'; 
+                return; 
+            }
 
             largeFolders.forEach(L => {
                 const color = stringToColor(L);
@@ -677,102 +725,421 @@
             });
 
             if (sortableBookshelf) sortableBookshelf.destroy();
-            sortableBookshelf = new Sortable(grid, { animation: 150, delay: 200, delayOnTouchOnly: true, onEnd: async function () { studyData = reorderObjectKeys(studyData, Array.from(grid.children).map(el => el.getAttribute('data-key'))); await syncDataWithServer(); }});
+            sortableBookshelf = new Sortable(grid, { 
+                animation: 150, delay: 200, delayOnTouchOnly: true, 
+                onEnd: async function () { 
+                    studyData = reorderObjectKeys(studyData, Array.from(grid.children).map(el => el.getAttribute('data-key'))); 
+                    await syncDataWithServer(); 
+                }
+            });
         }
 
         function renderFolderList() {
-            const container = document.getElementById('medium-list-container'); container.innerHTML = '';
+            const container = document.getElementById('medium-list-container'); 
+            container.innerHTML = '';
             if (!studyData[currentLargeFolder]) return;
             const mediumFolders = Object.keys(studyData[currentLargeFolder]);
-            if (mediumFolders.length === 0) { container.innerHTML = '<p class="text-gray-400">データがありません</p>'; return; }
+            if (mediumFolders.length === 0) { 
+                container.innerHTML = '<p class="text-gray-400">データがありません</p>'; 
+                return; 
+            }
 
             mediumFolders.forEach(M => {
                 let smallHTML = '';
-                Object.keys(studyData[currentLargeFolder][M] || {}).forEach(S => { smallHTML += `<div data-s-key="${S}" onclick="openActionModal('${currentLargeFolder}', '${M}', '${S}')" class="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-blue-50 transition shadow-sm grab-handle"><span class="font-bold text-gray-700 text-sm sm:text-base">📄 ${S}</span><span class="text-xs text-blue-500 font-bold bg-blue-100 px-2 py-1 rounded">学習</span></div>`; });
+                Object.keys(studyData[currentLargeFolder][M] || {}).forEach(S => { 
+                    smallHTML += `<div data-s-key="${S}" onclick="openActionModal('${currentLargeFolder}', '${M}', '${S}')" class="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-blue-50 transition shadow-sm grab-handle"><span class="font-bold text-gray-700 text-sm sm:text-base">📄 ${S}</span><span class="text-xs text-blue-500 font-bold bg-blue-100 px-2 py-1 rounded">学習</span></div>`; 
+                });
                 container.insertAdjacentHTML('beforeend', `<div data-m-key="${M}" class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-300 shadow-sm"><div class="flex items-center mb-3 grab-handle"><span class="text-gray-400 mr-2 text-xl">≡</span><h3 class="font-bold text-lg sm:text-xl text-indigo-900">📁 ${M}</h3></div><div class="small-list-container space-y-2 pl-2 sm:pl-4" data-parent-m="${M}">${smallHTML}</div></div>`);
             });
 
             if (sortableMediums) sortableMediums.destroy();
-            sortableMediums = new Sortable(container, { animation: 150, handle: '.grab-handle', delay: 200, delayOnTouchOnly: true, onEnd: async function () { studyData[currentLargeFolder] = reorderObjectKeys(studyData[currentLargeFolder], Array.from(container.children).map(el => el.getAttribute('data-m-key'))); await syncDataWithServer(); }});
+            sortableMediums = new Sortable(container, { 
+                animation: 150, handle: '.grab-handle', delay: 200, delayOnTouchOnly: true, 
+                onEnd: async function () { 
+                    studyData[currentLargeFolder] = reorderObjectKeys(studyData[currentLargeFolder], Array.from(container.children).map(el => el.getAttribute('data-m-key'))); 
+                    await syncDataWithServer(); 
+                }
+            });
 
             sortableSmalls.forEach(s => s.destroy()); sortableSmalls = [];
             document.querySelectorAll('.small-list-container').forEach(listEl => {
                 const parentM = listEl.getAttribute('data-parent-m');
-                sortableSmalls.push(new Sortable(listEl, { animation: 150, delay: 200, delayOnTouchOnly: true, onEnd: async function () { studyData[currentLargeFolder][parentM] = reorderObjectKeys(studyData[currentLargeFolder][parentM], Array.from(listEl.children).map(el => el.getAttribute('data-s-key'))); await syncDataWithServer(); }}));
+                sortableSmalls.push(new Sortable(listEl, { 
+                    animation: 150, delay: 200, delayOnTouchOnly: true, 
+                    onEnd: async function () { 
+                        studyData[currentLargeFolder][parentM] = reorderObjectKeys(studyData[currentLargeFolder][parentM], Array.from(listEl.children).map(el => el.getAttribute('data-s-key'))); 
+                        await syncDataWithServer(); 
+                    }
+                }));
             });
         }
 
-        // アクションモーダル
-        function openActionModal(L, M, S) { selectedSmallPath = { L, M, S }; document.getElementById('modal-folder-title').textContent = `📄 ${S}`; const modal = document.getElementById('action-modal'); const content = document.getElementById('action-modal-content'); modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => { content.classList.remove('translate-y-full'); }, 10); }
-        function closeActionModal() { const modal = document.getElementById('action-modal'); const content = document.getElementById('action-modal-content'); content.classList.add('translate-y-full'); setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); selectedSmallPath = null; }, 300); }
-        function startStudyNormal() { const { L, M, S } = selectedSmallPath; closeActionModal(); const records = studyData[L][M][S]; let allTexts = [], allQuestions = []; records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions); if (r.questions) allQuestions = allQuestions.concat(r.questions); }); renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`); }
-        async function startStudyGenerate() {
-            const { L, M, S } = selectedSmallPath; const records = studyData[L][M][S]; let allTexts = []; records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); }); const combinedText = allTexts.join("\n\n");
-            if (!combinedText.trim()) return alert("テキストデータがないため、新しい問題は作成できません。");
-            const count = document.getElementById('modal-question-count').value; const btn = document.getElementById('modal-generate-btn'); btn.textContent = "処理中..."; btn.disabled = true;
-            try { const response = await fetch("/api/generate-quiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: combinedText, num_questions: parseInt(count) }) }); if (!response.ok) throw new Error("問題の生成に失敗しました"); const data = await response.json(); closeActionModal(); renderStudyPage(allTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`); } catch (error) { alert(error.message); } finally { btn.textContent = "作成"; btn.disabled = false; }
+        // アクションモーダル処理（据え置き）
+        function openActionModal(L, M, S) { 
+            selectedSmallPath = { L, M, S }; 
+            document.getElementById('modal-folder-title').textContent = `📄 ${S}`; 
+            const modal = document.getElementById('action-modal'); 
+            const content = document.getElementById('action-modal-content'); 
+            modal.classList.remove('hidden'); 
+            modal.classList.add('flex'); 
+            setTimeout(() => { content.classList.remove('translate-y-full'); }, 10); 
         }
+
+        function closeActionModal() { 
+            const modal = document.getElementById('action-modal'); 
+            const content = document.getElementById('action-modal-content'); 
+            content.classList.add('translate-y-full'); 
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex'); 
+                selectedSmallPath = null; 
+            }, 300); 
+        }
+
+        function startStudyNormal() { 
+            const { L, M, S } = selectedSmallPath; 
+            closeActionModal(); 
+            const records = studyData[L][M][S]; 
+            let allTexts = [], allQuestions = []; 
+            records.forEach(r => { 
+                if (r.extracted_text) allTexts.push(r.extracted_text); 
+                if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions); 
+                if (r.questions) allQuestions = allQuestions.concat(r.questions); 
+            }); 
+            renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`); 
+        }
+
+        async function startStudyGenerate() {
+            const { L, M, S } = selectedSmallPath; 
+            const records = studyData[L][M][S]; 
+            let allTexts = []; 
+            records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); }); 
+            const combinedText = allTexts.join("\n\n");
+            
+            if (!combinedText.trim()) return alert("テキストデータがないため、新しい問題は作成できません。");
+            
+            const count = document.getElementById('modal-question-count').value; 
+            const btn = document.getElementById('modal-generate-btn'); 
+            btn.textContent = "処理中..."; 
+            btn.disabled = true;
+            
+            try { 
+                const response = await fetch("/api/generate-quiz", { 
+                    method: "POST", headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ text: combinedText, num_questions: parseInt(count) }) 
+                }); 
+                if (!response.ok) throw new Error("問題の生成に失敗しました"); 
+                const data = await response.json(); 
+                closeActionModal(); 
+                renderStudyPage(allTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`); 
+            } catch (error) { 
+                alert(error.message); 
+            } finally { 
+                btn.textContent = "作成"; 
+                btn.disabled = false; 
+            }
+        }
+
         async function confirmDeleteFolder() {
             const { L, M, S } = selectedSmallPath;
             if (confirm(`「${S}」のデータを全て削除しますか？`)) {
-                closeActionModal(); const latestData = await fetchLatestData(); if (latestData) studyData = latestData;
-                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) { delete studyData[L][M][S]; if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M]; if (Object.keys(studyData[L]).length === 0) { delete studyData[L]; await syncDataWithServer(); showBookshelfGrid(); return; } await syncDataWithServer(); }
+                closeActionModal(); 
+                const latestData = await fetchLatestData(); 
+                if (latestData) studyData = latestData;
+
+                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) { 
+                    delete studyData[L][M][S]; 
+                    if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M]; 
+                    if (Object.keys(studyData[L]).length === 0) { 
+                        delete studyData[L]; 
+                        await syncDataWithServer(); 
+                        showBookshelfGrid(); 
+                        return; 
+                    } 
+                    await syncDataWithServer(); 
+                }
                 renderFolderList(); 
             }
         }
 
-        // サーバー通信
-        async function fetchLatestData() { try { const res = await fetch("/api/load-data?t=" + new Date().getTime(), { cache: 'no-store' }); if (res.ok) { const d = await res.json(); if (d && Object.keys(d).length > 0) return d; } } catch (e) {} return null; }
-        async function syncDataWithServer() { try { const res = await fetch("/api/save-data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: studyData }) }); if (!res.ok) { alert("⚠️ 保存失敗"); return false; } return true; } catch (e) { alert("⚠️ 通信エラー"); return false; } }
-        async function loadDataFromServer() { const latestData = await fetchLatestData(); if (latestData) { studyData = latestData; if (!document.getElementById('bookshelf-tab').classList.contains('hidden')) { if (currentLargeFolder) renderFolderList(); else renderBookshelfGrid(); } } }
+        // Supabaseサーバー通信・データ管理（据え置き）
+        async function fetchLatestData() { 
+            try { 
+                const res = await fetch("/api/load-data?t=" + new Date().getTime(), { cache: 'no-store' }); 
+                if (res.ok) { 
+                    const d = await res.json(); 
+                    if (d && Object.keys(d).length > 0) return d; 
+                } 
+            } catch (e) {} 
+            return null; 
+        }
+
+        async function syncDataWithServer() { 
+            try { 
+                const res = await fetch("/api/save-data", { 
+                    method: "POST", headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ data: studyData }) 
+                }); 
+                if (!res.ok) { alert("⚠️ 保存失敗"); return false; } 
+                return true; 
+            } catch (e) { 
+                alert("⚠️ 通信エラー"); return false; 
+            } 
+        }
+
+        async function loadDataFromServer() { 
+            const latestData = await fetchLatestData(); 
+            if (latestData) { 
+                studyData = latestData; 
+                if (!document.getElementById('bookshelf-tab').classList.contains('hidden')) { 
+                    if (currentLargeFolder) renderFolderList(); 
+                    else renderBookshelfGrid(); 
+                } 
+            } 
+        }
+
         function updateDataLists() {
-            const listL = document.getElementById('list-large'), listM = document.getElementById('list-medium'), listS = document.getElementById('list-small'); listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
-            let setL = new Set(), setM = new Set(), setS = new Set(); for (const L in studyData) { setL.add(L); for (const M in studyData[L]) { setM.add(M); for (const S in studyData[L][M]) { setS.add(S); } } }
-            setL.forEach(v => listL.appendChild(new Option(v))); setM.forEach(v => listM.appendChild(new Option(v))); setS.forEach(v => listS.appendChild(new Option(v)));
+            const listL = document.getElementById('list-large'), listM = document.getElementById('list-medium'), listS = document.getElementById('list-small'); 
+            listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
+            let setL = new Set(), setM = new Set(), setS = new Set(); 
+            for (const L in studyData) { 
+                setL.add(L); 
+                for (const M in studyData[L]) { 
+                    setM.add(M); 
+                    for (const S in studyData[L][M]) { setS.add(S); } 
+                } 
+            }
+            setL.forEach(v => listL.appendChild(new Option(v))); 
+            setM.forEach(v => listM.appendChild(new Option(v))); 
+            setS.forEach(v => listS.appendChild(new Option(v)));
         }
-        async function saveToFolder(L, M, S, data) { L = L || '未分類'; M = M || '未分類'; S = S || '未分類'; const latestData = await fetchLatestData(); if (latestData) studyData = latestData; if (!studyData[L]) studyData[L] = {}; if (!studyData[L][M]) studyData[L][M] = {}; if (!studyData[L][M][S]) studyData[L][M][S] = []; studyData[L][M][S].push(data); await syncDataWithServer(); switchTab('bookshelf'); openBook(L); }
 
-        loadDataFromServer(); setInterval(loadDataFromServer, 30000);
+        async function saveToFolder(L, M, S, data) { 
+            L = L || '未分類'; M = M || '未分類'; S = S || '未分類'; 
+            const latestData = await fetchLatestData(); 
+            if (latestData) studyData = latestData; 
+            if (!studyData[L]) studyData[L] = {}; 
+            if (!studyData[L][M]) studyData[L][M] = {}; 
+            if (!studyData[L][M][S]) studyData[L][M][S] = []; 
+            studyData[L][M][S].push(data); 
+            await syncDataWithServer(); 
+            switchTab('bookshelf'); 
+            openBook(L); 
+        }
 
-        // TTS
+        loadDataFromServer(); 
+        setInterval(loadDataFromServer, 30000);
+
+        // TTS 音声読み上げ関連（据え置き）
         function buildTtsChunksAndUI() {
-            window.currentTtsChunks = []; document.getElementById('tts-mode').innerHTML = '<option value="all">すべて読上</option>'; let currentChunkText = "", currentChunkTitle = "ページ上部"; const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false); let node;
-            while(node = walker.nextNode()) { if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) { if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() }); let rawTitle = (node.innerText || node.textContent).trim(); currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle; currentChunkText = rawTitle + "。\n"; } else if (node.nodeType === Node.TEXT_NODE) { currentChunkText += node.textContent + " "; } }
+            window.currentTtsChunks = []; 
+            document.getElementById('tts-mode').innerHTML = '<option value="all">すべて読上</option>'; 
+            let currentChunkText = "", currentChunkTitle = "ページ上部"; 
+            const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false); 
+            let node;
+            
+            while(node = walker.nextNode()) { 
+                if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) { 
+                    if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() }); 
+                    let rawTitle = (node.innerText || node.textContent).trim(); 
+                    currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle; 
+                    currentChunkText = rawTitle + "。\n"; 
+                } else if (node.nodeType === Node.TEXT_NODE) { 
+                    currentChunkText += node.textContent + " "; 
+                } 
+            }
             if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
-            if (window.currentTtsChunks.length > 1) { const groupFrom = document.createElement('optgroup'); groupFrom.label = "▼ ここから最後まで ▼"; window.currentTtsChunks.forEach((c, i) => groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`); document.getElementById('tts-mode').appendChild(groupFrom); const groupOnly = document.createElement('optgroup'); groupOnly.label = "▼ この部分のみ ▼"; window.currentTtsChunks.forEach((c, i) => groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`); document.getElementById('tts-mode').appendChild(groupOnly); }
+            
+            if (window.currentTtsChunks.length > 1) { 
+                const groupFrom = document.createElement('optgroup'); groupFrom.label = "▼ ここから最後まで ▼"; 
+                window.currentTtsChunks.forEach((c, i) => groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`); 
+                document.getElementById('tts-mode').appendChild(groupFrom); 
+                const groupOnly = document.createElement('optgroup'); groupOnly.label = "▼ この部分のみ ▼"; 
+                window.currentTtsChunks.forEach((c, i) => groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`); 
+                document.getElementById('tts-mode').appendChild(groupOnly); 
+            }
         }
-        function resetTtsUI() { document.getElementById('tts-icon').textContent = '🔊'; document.getElementById('tts-text').textContent = '再生'; const container = document.getElementById('tts-player-container'); const btn = document.getElementById('tts-btn'); const mode = document.getElementById('tts-mode'); container.classList.replace('bg-pink-50', 'bg-indigo-50'); container.classList.replace('border-pink-300', 'border-indigo-200'); btn.classList.replace('text-pink-700', 'text-indigo-700'); btn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100'); mode.classList.replace('text-pink-700', 'text-indigo-700'); mode.classList.replace('border-pink-300', 'border-indigo-200'); }
-        function setTtsUIPlaying() { document.getElementById('tts-icon').textContent = '⏹️'; document.getElementById('tts-text').textContent = '停止'; const container = document.getElementById('tts-player-container'); const btn = document.getElementById('tts-btn'); const mode = document.getElementById('tts-mode'); container.classList.replace('bg-indigo-50', 'bg-pink-50'); container.classList.replace('border-indigo-200', 'border-pink-300'); btn.classList.replace('text-indigo-700', 'text-pink-700'); btn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100'); mode.classList.replace('text-indigo-700', 'text-pink-700'); mode.classList.replace('border-indigo-200', 'border-pink-300'); }
-        function stopTtsPlayback() { isSpeaking = false; ttsQueue = []; window.speechSynthesis.cancel(); resetTtsUI(); }
-        function playNextTtsQueue() { if (!isSpeaking || ttsQueue.length === 0) { stopTtsPlayback(); return; } let text = ttsQueue.shift(); if (!/[。！？.!?]$/.test(text)) text += "。"; const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'ja-JP'; utterance.rate = 1.0; utterance.onend = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); }; utterance.onerror = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); }; setTimeout(() => window.speechSynthesis.speak(utterance), 50); }
-        document.getElementById('tts-btn').addEventListener('click', function() { if (isSpeaking) { stopTtsPlayback(); return; } let textToSpeak = ""; const mode = document.getElementById('tts-mode').value; if (mode === 'all') textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n'); else if (mode.startsWith('from_')) textToSpeak = window.currentTtsChunks.slice(parseInt(mode.split('_')[1])).map(c => c.text).join('\n\n'); else if (mode.startsWith('only_')) textToSpeak = window.currentTtsChunks[parseInt(mode.split('_')[1])].text; if (!textToSpeak || !textToSpeak.trim()) textToSpeak = document.getElementById('readable-text').innerText || document.getElementById('readable-text').textContent; if (!textToSpeak || !textToSpeak.trim()) return alert("読み上げるテキストがありません。"); textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([①-⑳])/g, '\n$1、'); ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak]; ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0); isSpeaking = true; setTtsUIPlaying(); window.speechSynthesis.cancel(); playNextTtsQueue(); });
 
-        // ファイルアップロード
-        function toggleFileType() { const fileType = document.querySelector('input[name="file-type"]:checked').value; const imgInput = document.getElementById('image-upload'); const pdfInput = document.getElementById('pdf-upload'); const promptText = document.getElementById('upload-prompt-text'); const promptSubText = document.getElementById('upload-prompt-subtext'); if (fileType === 'image') { imgInput.classList.remove('hidden'); pdfInput.classList.add('hidden'); promptText.textContent = "📸 複数枚の写真を選択"; promptSubText.textContent = "いつものアルバムから選べます"; } else { imgInput.classList.add('hidden'); pdfInput.classList.remove('hidden'); promptText.textContent = "📄 PDFファイルを選択"; promptSubText.textContent = "端末内のPDFを選べます"; } imgInput.value = ''; pdfInput.value = ''; document.getElementById('file-name').innerHTML = ''; }
-        const compressImage = async (file, maxWidth = 1200) => { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target.result; img.onload = () => { let width = img.width, height = img.height; if (width > maxWidth || height > maxWidth) { if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } else { width = Math.round((width * maxWidth) / height); height = maxWidth; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() })), 'image/jpeg', 0.8); }; img.onerror = reject; }; reader.onerror = reject; }); };
-        function handleFileSelect(e) { if(e.target.files.length > 0) { const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>'); const typeIcon = e.target.id === 'image-upload' ? '📸' : '📄'; document.getElementById('file-name').innerHTML = `${typeIcon} ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`; } else document.getElementById('file-name').innerHTML = ''; }
-        document.getElementById('image-upload').addEventListener('change', handleFileSelect); document.getElementById('pdf-upload').addEventListener('change', handleFileSelect);
+        function resetTtsUI() { 
+            document.getElementById('tts-icon').textContent = '🔊'; document.getElementById('tts-text').textContent = '再生'; 
+            const container = document.getElementById('tts-player-container'); 
+            const btn = document.getElementById('tts-btn'); 
+            const mode = document.getElementById('tts-mode'); 
+            container.classList.replace('bg-pink-50', 'bg-indigo-50'); 
+            container.classList.replace('border-pink-300', 'border-indigo-200'); 
+            btn.classList.replace('text-pink-700', 'text-indigo-700'); 
+            btn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100'); 
+            mode.classList.replace('text-pink-700', 'text-indigo-700'); 
+            mode.classList.replace('border-pink-300', 'border-indigo-200'); 
+        }
+
+        function setTtsUIPlaying() { 
+            document.getElementById('tts-icon').textContent = '⏹️'; document.getElementById('tts-text').textContent = '停止'; 
+            const container = document.getElementById('tts-player-container'); 
+            const btn = document.getElementById('tts-btn'); 
+            const mode = document.getElementById('tts-mode'); 
+            container.classList.replace('bg-indigo-50', 'bg-pink-50'); 
+            container.classList.replace('border-indigo-200', 'border-pink-300'); 
+            btn.classList.replace('text-indigo-700', 'text-pink-700'); 
+            btn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100'); 
+            mode.classList.replace('text-indigo-700', 'text-pink-700'); 
+            mode.classList.replace('border-indigo-200', 'border-pink-300'); 
+        }
+
+        function stopTtsPlayback() { 
+            isSpeaking = false; 
+            ttsQueue = []; 
+            window.speechSynthesis.cancel(); 
+            resetTtsUI(); 
+        }
+
+        function playNextTtsQueue() { 
+            if (!isSpeaking || ttsQueue.length === 0) { stopTtsPlayback(); return; } 
+            let text = ttsQueue.shift(); 
+            if (!/[。！？.!?]$/.test(text)) text += "。"; 
+            const utterance = new SpeechSynthesisUtterance(text); 
+            utterance.lang = 'ja-JP'; utterance.rate = 1.0; 
+            utterance.onend = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); }; 
+            utterance.onerror = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); }; 
+            setTimeout(() => window.speechSynthesis.speak(utterance), 50); 
+        }
+
+        document.getElementById('tts-btn').addEventListener('click', function() { 
+            if (isSpeaking) { stopTtsPlayback(); return; } 
+            let textToSpeak = ""; const mode = document.getElementById('tts-mode').value; 
+            if (mode === 'all') textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n'); 
+            else if (mode.startsWith('from_')) textToSpeak = window.currentTtsChunks.slice(parseInt(mode.split('_')[1])).map(c => c.text).join('\n\n'); 
+            else if (mode.startsWith('only_')) textToSpeak = window.currentTtsChunks[parseInt(mode.split('_')[1])].text; 
+            
+            if (!textToSpeak || !textToSpeak.trim()) textToSpeak = document.getElementById('readable-text').innerText || document.getElementById('readable-text').textContent; 
+            if (!textToSpeak || !textToSpeak.trim()) return alert("読み上げるテキストがありません。"); 
+            
+            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([①-⑳])/g, '\n$1、'); 
+            ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak]; 
+            ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0); 
+            isSpeaking = true; 
+            setTtsUIPlaying(); 
+            window.speechSynthesis.cancel(); 
+            playNextTtsQueue(); 
+        });
+
+        // ファイルアップロード・画像圧縮・AI解析リクエスト（据え置き）
+        function toggleFileType() { 
+            const fileType = document.querySelector('input[name="file-type"]:checked').value; 
+            const imgInput = document.getElementById('image-upload'); 
+            const pdfInput = document.getElementById('pdf-upload'); 
+            const promptText = document.getElementById('upload-prompt-text'); 
+            const promptSubText = document.getElementById('upload-prompt-subtext'); 
+            if (fileType === 'image') { 
+                imgInput.classList.remove('hidden'); 
+                pdfInput.classList.add('hidden'); 
+                promptText.textContent = "📸 複数枚の写真を選択"; 
+                promptSubText.textContent = "いつものアルバムから選べます"; 
+            } else { 
+                imgInput.classList.add('hidden'); 
+                pdfInput.classList.remove('hidden'); 
+                promptText.textContent = "📄 PDFファイルを選択"; 
+                promptSubText.textContent = "端末内のPDFを選べます"; 
+            } 
+            imgInput.value = ''; 
+            pdfInput.value = ''; 
+            document.getElementById('file-name').innerHTML = ''; 
+        }
+
+        const compressImage = async (file, maxWidth = 1200) => { 
+            return new Promise((resolve, reject) => { 
+                const reader = new FileReader(); 
+                reader.readAsDataURL(file); 
+                reader.onload = (event) => { 
+                    const img = new Image(); img.src = event.target.result; 
+                    img.onload = () => { 
+                        let width = img.width, height = img.height; 
+                        if (width > maxWidth || height > maxWidth) { 
+                            if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
+                            else { width = Math.round((width * maxWidth) / height); height = maxWidth; } 
+                        } 
+                        const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; 
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height); 
+                        canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() })), 'image/jpeg', 0.8); 
+                    }; 
+                    img.onerror = reject; 
+                }; 
+                reader.onerror = reject; 
+            }); 
+        };
+
+        function handleFileSelect(e) { 
+            if(e.target.files.length > 0) { 
+                const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>'); 
+                const typeIcon = e.target.id === 'image-upload' ? '📸' : '📄'; 
+                document.getElementById('file-name').innerHTML = `${typeIcon} ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`; 
+            } else {
+                document.getElementById('file-name').innerHTML = ''; 
+            }
+        }
+        document.getElementById('image-upload').addEventListener('change', handleFileSelect); 
+        document.getElementById('pdf-upload').addEventListener('change', handleFileSelect);
+
         document.getElementById('extract-btn').addEventListener('click', async function() {
-            const fileType = document.querySelector('input[name="file-type"]:checked').value; const activeInput = fileType === 'image' ? document.getElementById('image-upload') : document.getElementById('pdf-upload'); if(!activeInput.files.length) return alert("ファイルを選択してください！");
-            const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim(); const mode = document.querySelector('input[name="scan-mode"]:checked').value;
-            const btn = document.getElementById('extract-btn'); btn.textContent = "⚙️ ファイルを準備中..."; btn.disabled = true; btn.classList.replace('bg-blue-600', 'bg-gray-400');
-            let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name)); let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = []; for (let i = 0; i < filesArray.length; i++) { if (mode === "workbook") qPerFile.push(1); else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); } }
+            const fileType = document.querySelector('input[name="file-type"]:checked').value; 
+            const activeInput = fileType === 'image' ? document.getElementById('image-upload') : document.getElementById('pdf-upload'); 
+            
+            if(!activeInput.files.length) return alert("ファイルを選択してください！");
+            
+            const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim(); 
+            const mode = document.querySelector('input[name="scan-mode"]:checked').value;
+            const btn = document.getElementById('extract-btn'); 
+            
+            btn.textContent = "⚙️ ファイルを準備中..."; btn.disabled = true; btn.classList.replace('bg-blue-600', 'bg-gray-400');
+            
+            let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name)); 
+            let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = []; 
+            for (let i = 0; i < filesArray.length; i++) { 
+                if (mode === "workbook") qPerFile.push(1); 
+                else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); } 
+            }
+            
             let combinedText = [], combinedQ = [];
             try {
                 for (let i = 0; i < filesArray.length; i++) {
                     const file = filesArray[i]; let fileToSend = file;
-                    if (file.type.startsWith('image/')) { btn.textContent = `⚙️ 画像を圧縮中... (${i+1}/${filesArray.length}枚目)`; fileToSend = await compressImage(file); } else if (file.type === 'application/pdf') { if (file.size > 15 * 1024 * 1024) throw new Error(`PDFが大きすぎます。`); }
+                    if (file.type.startsWith('image/')) { 
+                        btn.textContent = `⚙️ 画像を圧縮中... (${i+1}/${filesArray.length}枚目)`; 
+                        fileToSend = await compressImage(file); 
+                    } else if (file.type === 'application/pdf') { 
+                        if (file.size > 15 * 1024 * 1024) throw new Error(`PDFが大きすぎます。`); 
+                    }
                     btn.textContent = `⚙️ AIが解析中... (${i+1}/${filesArray.length})`;
                     const fd = new FormData(); fd.append("file", fileToSend); fd.append("mode", mode); fd.append("num_questions", qPerFile[i]);
-                    const res = await fetch("/api/analyze", { method: "POST", body: fd }); if (!res.ok) throw new Error(`解析エラー`); const data = await res.json();
-                    if (data.extracted_text) combinedText.push(data.extracted_text); if (data.generated_questions) combinedQ = combinedQ.concat(data.generated_questions); else if (data.questions) combinedQ = combinedQ.concat(data.questions);
+                    
+                    const res = await fetch("/api/analyze", { method: "POST", body: fd }); 
+                    if (!res.ok) throw new Error(`解析エラー`); 
+                    const data = await res.json();
+                    
+                    if (data.extracted_text) combinedText.push(data.extracted_text); 
+                    if (data.generated_questions) combinedQ = combinedQ.concat(data.generated_questions); 
+                    else if (data.questions) combinedQ = combinedQ.concat(data.questions);
                 }
-                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ }); activeInput.value = ''; document.getElementById('file-name').innerHTML = '';
-            } catch (error) { alert("失敗しました。\n詳細: " + error.message); } finally { btn.textContent = "AIに送信して解析・保存スタート"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-blue-600'); }
+                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ }); 
+                activeInput.value = ''; document.getElementById('file-name').innerHTML = '';
+            } catch (error) { 
+                alert("失敗しました。\n詳細: " + error.message); 
+            } finally { 
+                btn.textContent = "AIに送信して解析・保存スタート"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-blue-600'); 
+            }
         });
-        document.getElementById('highlight-btn').addEventListener('click', function() { const sel = window.getSelection(); if (!sel.rangeCount || sel.toString().trim() === '') return alert("マーカーを引きたい文字をなぞってください。"); try { const span = document.createElement('span'); span.className = 'user-mark'; sel.getRangeAt(0).surroundContents(span); sel.removeAllRanges(); } catch(e){} });
 
-        // 実践画面フォーム切り替え
+        // テキスト選択マーカー機能（据え置き）
+        document.getElementById('highlight-btn').addEventListener('click', function() { 
+            const sel = window.getSelection(); 
+            if (!sel.rangeCount || sel.toString().trim() === '') return alert("マーカーを引きたい文字をなぞってください。"); 
+            try { 
+                const span = document.createElement('span'); span.className = 'user-mark'; 
+                sel.getRangeAt(0).surroundContents(span); sel.removeAllRanges(); 
+            } catch(e){} 
+        });
+
+        // 実践画面 フォーム切り替え機能（新規）
         function switchPracticeForm(formId) {
             const formIds = ['yoshiki-2', 'yoshiki-3', 'yoshiki-4', 'yoshiki-5', 'yoshiki-6', 'yoshiki-7', 'yoshiki-8', 'yoshiki-9', 'yoshiki-10', 'yoshiki-11'];
             formIds.forEach(id => {
