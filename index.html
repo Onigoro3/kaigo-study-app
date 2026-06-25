@@ -91,6 +91,7 @@
                     <div class="flex space-x-4">
                         <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked /> 教科書</label>
                         <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="workbook" class="mr-2" /> 問題集</label>
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="practice" class="mr-2" /> 実技問題</label>
                     </div>
                 </div>
 
@@ -200,14 +201,23 @@
         <div id="practice-tab" class="hidden fade-in h-[calc(100vh-8rem)]">
             <div class="flex h-full rounded-xl overflow-hidden shadow-lg border border-gray-300">
                 
-                <div class="w-1/3 bg-white flex flex-col border-r border-gray-300">
+                <div class="w-1/3 bg-white flex flex-col border-r border-gray-300 relative">
                     <div class="p-4 bg-blue-50 border-b border-gray-200 flex justify-between items-center">
                         <h2 class="font-bold text-blue-800">📋 実践問題</h2>
-                        <button class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">問題を読み込む</button>
+                        <button onclick="renderPracticeList()" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 shadow-sm">一覧更新</button>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-4 space-y-4" id="practice-quiz-list">
-                        <div class="p-4 bg-gray-50 rounded-lg border">
-                            <p class="font-bold text-sm text-gray-800 mb-2">Q. 提供された事例を基に、右側の様式から適切な書類を選び、必要な項目（公費負担者番号、明細、集計等）をすべて入力してください。</p>
+                    
+                    <div id="practice-problem-display" class="hidden flex-1 overflow-y-auto p-4 bg-white">
+                        <button onclick="showPracticeList()" class="mb-4 text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 py-2 px-3 rounded font-bold shadow-sm flex items-center transition">
+                            <span class="mr-1">←</span> 問題一覧に戻る
+                        </button>
+                        <h3 id="practice-problem-title" class="font-bold text-base text-indigo-900 mb-3 border-b-2 border-indigo-200 pb-2"></h3>
+                        <div id="practice-problem-content" class="text-sm text-gray-800 leading-loose space-y-4"></div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="practice-quiz-list">
+                        <div class="text-center text-gray-500 text-sm mt-10">
+                            「追加」タブで「実技問題」として<br>スキャンしたデータがここに表示されます。
                         </div>
                     </div>
                 </div>
@@ -634,6 +644,8 @@
             } else if (tabName === 'practice') {
                 document.getElementById('practice-tab').classList.remove('hidden');
                 document.getElementById('nav-practice').classList.replace('text-gray-400', 'text-blue-600');
+                showPracticeList(); 
+                renderPracticeList(); 
             }
             window.scrollTo(0, 0);
         }
@@ -658,7 +670,7 @@
             switchTab('bookshelf'); 
         }
 
-        // 学習画面レンダリング（据え置き）
+        // 学習画面レンダリング
         function renderStudyPage(extractedTexts, questions, folderPathStr) {
             document.getElementById('bookshelf-tab').classList.add('hidden');
             document.getElementById('add-data-tab').classList.add('hidden');
@@ -709,7 +721,7 @@
             document.getElementById('readable-text').className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`; 
         }
 
-        // 本棚レンダリング（据え置き）
+        // 本棚レンダリング
         function renderBookshelfGrid() {
             const grid = document.getElementById('bookshelf-grid'); 
             grid.innerHTML = '';
@@ -774,7 +786,7 @@
             });
         }
 
-        // アクションモーダル処理（据え置き）
+        // アクションモーダル処理
         function openActionModal(L, M, S) { 
             selectedSmallPath = { L, M, S }; 
             document.getElementById('modal-folder-title').textContent = `📄 ${S}`; 
@@ -862,7 +874,7 @@
             }
         }
 
-        // Supabaseサーバー通信・データ管理（据え置き）
+        // Supabaseサーバー通信・データ管理
         async function fetchLatestData() { 
             try { 
                 const res = await fetch("/api/load-data?t=" + new Date().getTime(), { cache: 'no-store' }); 
@@ -930,7 +942,7 @@
         loadDataFromServer(); 
         setInterval(loadDataFromServer, 30000);
 
-        // TTS 音声読み上げ関連（据え置き）
+        // TTS 音声読み上げ関連
         function buildTtsChunksAndUI() {
             window.currentTtsChunks = []; 
             document.getElementById('tts-mode').innerHTML = '<option value="all">すべて読上</option>'; 
@@ -1023,7 +1035,7 @@
             playNextTtsQueue(); 
         });
 
-        // ファイルアップロード・画像圧縮・AI解析リクエスト（据え置き）
+        // ファイルアップロード・画像圧縮・AI解析リクエスト
         function toggleFileType() { 
             const fileType = document.querySelector('input[name="file-type"]:checked').value; 
             const imgInput = document.getElementById('image-upload'); 
@@ -1095,11 +1107,12 @@
             let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name)); 
             let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = []; 
             for (let i = 0; i < filesArray.length; i++) { 
-                if (mode === "workbook") qPerFile.push(1); 
+                if (mode === "workbook" || mode === "practice") qPerFile.push(1); 
                 else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); } 
             }
             
             let combinedText = [], combinedQ = [];
+            let targetFormToSave = null;
             try {
                 for (let i = 0; i < filesArray.length; i++) {
                     const file = filesArray[i]; let fileToSend = file;
@@ -1119,8 +1132,9 @@
                     if (data.extracted_text) combinedText.push(data.extracted_text); 
                     if (data.generated_questions) combinedQ = combinedQ.concat(data.generated_questions); 
                     else if (data.questions) combinedQ = combinedQ.concat(data.questions);
+                    if (data.target_form) targetFormToSave = data.target_form;
                 }
-                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ }); 
+                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ, target_form: targetFormToSave }); 
                 activeInput.value = ''; document.getElementById('file-name').innerHTML = '';
             } catch (error) { 
                 alert("失敗しました。\n詳細: " + error.message); 
@@ -1129,7 +1143,7 @@
             }
         });
 
-        // テキスト選択マーカー機能（据え置き）
+        // テキスト選択マーカー機能
         document.getElementById('highlight-btn').addEventListener('click', function() { 
             const sel = window.getSelection(); 
             if (!sel.rangeCount || sel.toString().trim() === '') return alert("マーカーを引きたい文字をなぞってください。"); 
@@ -1139,7 +1153,7 @@
             } catch(e){} 
         });
 
-        // 実践画面 フォーム切り替え機能（新規）
+        // --- 実践問題用の処理 ---
         function switchPracticeForm(formId) {
             const formIds = ['yoshiki-2', 'yoshiki-3', 'yoshiki-4', 'yoshiki-5', 'yoshiki-6', 'yoshiki-7', 'yoshiki-8', 'yoshiki-9', 'yoshiki-10', 'yoshiki-11'];
             formIds.forEach(id => {
@@ -1148,6 +1162,62 @@
             });
             const target = document.getElementById('form-' + formId);
             if (target) target.classList.remove('hidden');
+        }
+
+        function renderPracticeList() {
+            const listContainer = document.getElementById('practice-quiz-list');
+            listContainer.innerHTML = '';
+            let hasPracticeData = false;
+            
+            for (const L in studyData) {
+                for (const M in studyData[L]) {
+                    for (const S in studyData[L][M]) {
+                        studyData[L][M][S].forEach((item, index) => {
+                            if (item.type === 'practice') {
+                                hasPracticeData = true;
+                                const formLabel = item.target_form ? item.target_form.replace('yoshiki-', '様式') : '指定なし';
+                                const btnHtml = `
+                                    <div onclick="selectPracticeProblem('${L}', '${M}', '${S}', ${index})" class="p-4 bg-white hover:bg-blue-50 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition group">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <p class="font-bold text-sm text-blue-900 group-hover:text-blue-600 transition">📄 ${S}</p>
+                                            <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold py-1 px-2 rounded border border-indigo-200">${formLabel}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 truncate mt-1">📁 ${L} > ${M}</p>
+                                    </div>
+                                `;
+                                listContainer.insertAdjacentHTML('beforeend', btnHtml);
+                            }
+                        });
+                    }
+                }
+            }
+            
+            if (!hasPracticeData) {
+                listContainer.innerHTML = `<div class="text-center text-gray-500 text-sm mt-10">「追加」タブから「実技問題」を<br>スキャンして保存してください。</div>`;
+            }
+        }
+
+        function selectPracticeProblem(L, M, S, index) {
+            const item = studyData[L][M][S][index];
+            document.getElementById('practice-quiz-list').classList.add('hidden');
+            document.getElementById('practice-problem-display').classList.remove('hidden');
+            
+            document.getElementById('practice-problem-title').textContent = `📄 ${S}`;
+            document.getElementById('practice-problem-content').innerHTML = item.extracted_text || '<p class="text-red-500">問題文データを読み取れませんでした。</p>';
+            
+            // AIが判別した様式に合わせて右側のフォームを自動で切り替える
+            if (item.target_form) {
+                const selector = document.getElementById('form-selector');
+                if (Array.from(selector.options).some(opt => opt.value === item.target_form)) {
+                    selector.value = item.target_form;
+                    switchPracticeForm(item.target_form);
+                }
+            }
+        }
+
+        function showPracticeList() {
+            document.getElementById('practice-problem-display').classList.add('hidden');
+            document.getElementById('practice-quiz-list').classList.remove('hidden');
         }
     </script>
 </body>

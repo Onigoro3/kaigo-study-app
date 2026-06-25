@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -46,11 +46,11 @@ class StudyAnalyzeResponse(BaseModel):
     type: str
     extracted_text: str
     generated_questions: List[QuizQuestion]
+    target_form: Optional[str] = None  # 実技問題で指定された様式を保持
 
 class SaveDataRequest(BaseModel):
     data: Dict[str, Any]
 
-# 【新規追加】テキストから問題を作成するためのデータ構造
 class GenerateQuizRequest(BaseModel):
     text: str
     num_questions: int
@@ -101,6 +101,15 @@ async def analyze_image(
             
             ※extracted_text は空文字（""）にしてください。
             """
+        elif mode == "practice":
+            prompt = f"""
+            画像は介護事務の実技問題（請求実技問題など）です。
+            問題文および提示されている条件（保険者、被保険者、事業所、提供サービスなど）をすべて読み取り、HTMLで見やすい形式（改行や <ul>, <table> タグを適宜使用）に整形して extracted_text に格納してください。
+            また、問題文中で指定されている様式（例：「様式第二」「様式第三」など）を判別し、以下のいずれかの文字列を target_form に設定してください。
+            "yoshiki-2", "yoshiki-3", "yoshiki-4", "yoshiki-5", "yoshiki-6", "yoshiki-7", "yoshiki-8", "yoshiki-9", "yoshiki-10", "yoshiki-11"
+            判別できない場合や指定がない場合は null にしてください。
+            generated_questions は空のリスト [] とし、typeは "practice" としてください。
+            """
         else:
             prompt = f"""
             添付された教科書の画像を解析し、以下の指示に従って指定のデータ構造に格納してください。
@@ -136,7 +145,6 @@ async def analyze_image(
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
-# 【新規追加】保存済みのテキストから新しい問題を作成するAPI
 @app.post("/api/generate-quiz")
 async def generate_quiz_from_text(req: GenerateQuizRequest):
     try:
@@ -154,7 +162,7 @@ async def generate_quiz_from_text(req: GenerateQuizRequest):
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=QuizOnlyResponse,
-                temperature=0.3, # 少しだけ柔軟性を持たせる
+                temperature=0.3,
                 max_output_tokens=8192,
             )
         )
