@@ -200,7 +200,7 @@
                     </div>
                     <div class="flex-1 overflow-y-auto p-4 space-y-4" id="practice-quiz-list">
                         <div class="p-4 bg-gray-50 rounded-lg border">
-                            <p class="font-bold text-sm text-gray-800 mb-2">Q. 利用者のニーズに対し、どのようなサービスをどれくらいの頻度で提供するかを記載する様式を選択し、右側のフォームに入力してください。</p>
+                            <p class="font-bold text-sm text-gray-800 mb-2">Q. 提供された事例を基に、右側の様式から適切な書類を選び、必要な項目を入力してください。</p>
                         </div>
                     </div>
                 </div>
@@ -211,10 +211,13 @@
                         <select id="form-selector" class="border border-gray-400 rounded py-1 px-2 text-sm bg-white" onchange="switchPracticeForm(this.value)">
                             <option value="yoshiki-2">様式第二（居宅サービス計画書 2）</option>
                             <option value="yoshiki-8">様式第八（サービス担当者会議の要点）</option>
+                            <option value="kyufu-2">介護給付費明細書 様式第二（居宅サービス等）</option>
+                            <option value="kyufu-3">介護給付費明細書 様式第三（短期入所）</option>
                         </select>
                     </div>
                     
                     <div class="flex-1 overflow-y-auto p-6">
+                        <!-- 既存：居宅サービス計画書（２） -->
                         <div id="form-yoshiki-2" class="bg-white p-6 shadow rounded border border-gray-300">
                             <h3 class="text-center font-bold text-lg mb-4">居宅サービス計画書（２）</h3>
                             <table class="w-full border-collapse border border-black text-sm">
@@ -231,18 +234,12 @@
                                         <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
                                         <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
                                     </tr>
-                                    <tr>
-                                        <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
-                                        <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
-                                        <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
-                                    </tr>
                                 </tbody>
                             </table>
-                            <div class="mt-4 flex justify-end">
-                                <button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button>
-                            </div>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
                         </div>
 
+                        <!-- 既存：サービス担当者会議の要点 -->
                         <div id="form-yoshiki-8" class="hidden bg-white p-6 shadow rounded border border-gray-300">
                             <h3 class="text-center font-bold text-lg mb-4">サービス担当者会議の要点</h3>
                             <table class="w-full border-collapse border border-black text-sm">
@@ -261,9 +258,99 @@
                                     </tr>
                                 </tbody>
                             </table>
-                            <div class="mt-4 flex justify-end">
-                                <button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <!-- 新規：介護給付費明細書 様式第二 -->
+                        <div id="form-kyufu-2" class="hidden bg-white p-6 shadow rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">居宅サービス介護給付費明細書（様式第二）</h3>
+                            <div class="grid grid-cols-2 gap-4 text-xs mb-4">
+                                <table class="border-collapse border border-black w-full">
+                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">公費負担者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">公費受給者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">被保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">氏名</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">生年月日</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none" placeholder="1.明治 2.大正 3.昭和  年 月 日"></td></tr>
+                                </table>
+                                <table class="border-collapse border border-black w-full">
+                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">事業所番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">事業所名称</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">要介護状態区分</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none" placeholder="要支援・1・2・3・4・5"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">認定有効期間</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none" placeholder="平成  年 月 日 から"></td></tr>
+                                </table>
                             </div>
+                            <h4 class="font-bold text-sm mb-2">給付費明細欄</h4>
+                            <table class="border-collapse border border-black w-full text-xs">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="border border-black p-1">サービス内容</th>
+                                        <th class="border border-black p-1 w-20">コード</th>
+                                        <th class="border border-black p-1 w-16">単位数</th>
+                                        <th class="border border-black p-1 w-12">回数</th>
+                                        <th class="border border-black p-1 w-20">ｻｰﾋﾞｽ単位数</th>
+                                        <th class="border border-black p-1 w-12">公費分</th>
+                                        <th class="border border-black p-1 w-32">摘要</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <!-- 新規：介護給付費明細書 様式第三（短期入所） -->
+                        <div id="form-kyufu-3" class="hidden bg-white p-6 shadow rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">居宅サービス介護給付費明細書（短期入所生活介護 様式第三）</h3>
+                            <div class="grid grid-cols-2 gap-4 text-xs mb-4">
+                                <table class="border-collapse border border-black w-full">
+                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">公費負担者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">被保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">氏名</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                </table>
+                                <table class="border-collapse border border-black w-full">
+                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">事業所番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1">要介護状態区分</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                </table>
+                            </div>
+                            
+                            <table class="border-collapse border border-black w-full text-xs mb-4">
+                                <tr>
+                                    <th class="border border-black bg-gray-100 p-1 w-1/6">入所年月日</th><td class="border border-black p-0 w-1/6"><input type="text" class="w-full p-1 outline-none" placeholder="平成 年 月 日"></td>
+                                    <th class="border border-black bg-gray-100 p-1 w-1/6">退所年月日</th><td class="border border-black p-0 w-1/6"><input type="text" class="w-full p-1 outline-none" placeholder="平成 年 月 日"></td>
+                                    <th class="border border-black bg-gray-100 p-1 w-1/6">短期入所実日数</th><td class="border border-black p-0 w-1/6"><input type="number" class="w-full p-1 outline-none text-right" placeholder="日"></td>
+                                </tr>
+                            </table>
+
+                            <h4 class="font-bold text-sm mb-2">給付費明細欄</h4>
+                            <table class="border-collapse border border-black w-full text-xs">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="border border-black p-1">サービス内容</th>
+                                        <th class="border border-black p-1 w-20">コード</th>
+                                        <th class="border border-black p-1 w-16">単位数</th>
+                                        <th class="border border-black p-1 w-12">日数/回数</th>
+                                        <th class="border border-black p-1 w-20">ｻｰﾋﾞｽ単位数</th>
+                                        <th class="border border-black p-1 w-32">摘要</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
                         </div>
                     </div>
                 </div>
@@ -965,12 +1052,10 @@
         function switchPracticeForm(formId) {
             document.getElementById('form-yoshiki-2').classList.add('hidden');
             document.getElementById('form-yoshiki-8').classList.add('hidden');
+            document.getElementById('form-kyufu-2').classList.add('hidden');
+            document.getElementById('form-kyufu-3').classList.add('hidden');
             
-            if (formId === 'yoshiki-2') {
-                document.getElementById('form-yoshiki-2').classList.remove('hidden');
-            } else if (formId === 'yoshiki-8') {
-                document.getElementById('form-yoshiki-8').classList.remove('hidden');
-            }
+            document.getElementById('form-' + formId).classList.remove('hidden');
         }
     </script>
 </body>
