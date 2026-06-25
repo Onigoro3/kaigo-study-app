@@ -24,16 +24,9 @@
         select optgroup { font-weight: bold; color: #4338ca; background-color: #e0e7ff; }
         select option { color: #1f2937; background-color: #ffffff; font-weight: normal; }
 
-        .book-cover {
-            box-shadow: -4px 0 10px rgba(0,0,0,0.1) inset, 2px 2px 5px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
+        .book-cover { box-shadow: -4px 0 10px rgba(0,0,0,0.1) inset, 2px 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .book-cover:active { transform: scale(0.95); }
-        .book-spine {
-            position: absolute; top: 0; bottom: 0; left: 0; width: 10px;
-            background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(0,0,0,0.1));
-            border-radius: 4px 0 0 4px;
-        }
+        .book-spine { position: absolute; top: 0; bottom: 0; left: 0; width: 10px; background: linear-gradient(to right, rgba(255,255,255,0.4), rgba(0,0,0,0.1)); border-radius: 4px 0 0 4px; }
         
         .sortable-ghost { opacity: 0.4; background-color: #f3f4f6; }
         .sortable-drag { cursor: grabbing !important; }
@@ -42,6 +35,13 @@
 
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 実践フォーム用のテーブルスタイル */
+        .kaigo-table { w-full border-collapse border border-black text-xs mb-4; }
+        .kaigo-table th { border: 1px solid black; background-color: #f3f4f6; padding: 4px; font-weight: normal; text-align: center; }
+        .kaigo-table td { border: 1px solid black; padding: 0; }
+        .kaigo-input { width: 100%; height: 100%; padding: 4px; outline: none; border: none; font-size: 0.75rem; background: transparent; }
+        .kaigo-input:focus { background-color: #e0f2fe; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans leading-normal tracking-normal pb-20">
@@ -200,158 +200,342 @@
                     </div>
                     <div class="flex-1 overflow-y-auto p-4 space-y-4" id="practice-quiz-list">
                         <div class="p-4 bg-gray-50 rounded-lg border">
-                            <p class="font-bold text-sm text-gray-800 mb-2">Q. 提供された事例を基に、右側の様式から適切な書類を選び、必要な項目を入力してください。</p>
+                            <p class="font-bold text-sm text-gray-800 mb-2">Q. 提供された事例を基に、右側の様式から適切な書類を選び、必要な項目（公費負担者番号、明細、集計等）をすべて入力してください。</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="w-2/3 bg-gray-100 flex flex-col">
                     <div class="p-4 bg-gray-200 border-b border-gray-300 flex justify-between items-center">
-                        <h2 class="font-bold text-gray-800">📝 書類作成フォーム</h2>
-                        <select id="form-selector" class="border border-gray-400 rounded py-1 px-2 text-sm bg-white" onchange="switchPracticeForm(this.value)">
-                            <option value="yoshiki-2">様式第二（居宅サービス計画書 2）</option>
-                            <option value="yoshiki-8">様式第八（サービス担当者会議の要点）</option>
-                            <option value="kyufu-2">介護給付費明細書 様式第二（居宅サービス等）</option>
-                            <option value="kyufu-3">介護給付費明細書 様式第三（短期入所）</option>
+                        <h2 class="font-bold text-gray-800">📝 介護給付費明細書 フォーム</h2>
+                        <select id="form-selector" class="border border-gray-400 rounded py-1 px-2 text-sm bg-white font-bold text-blue-900" onchange="switchPracticeForm(this.value)">
+                            <option value="yoshiki-2">様式第二 (居宅サービス等)</option>
+                            <option value="yoshiki-3">様式第三 (短期入所生活介護)</option>
+                            <option value="yoshiki-4">様式第四 (老健・短期入所療養)</option>
+                            <option value="yoshiki-5">様式第五 (病院・短期入所療養)</option>
+                            <option value="yoshiki-6">様式第六 (痴呆・特定施設)</option>
+                            <option value="yoshiki-7">様式第七 (居宅介護支援)</option>
+                            <option value="yoshiki-8">様式第八 (介護老人福祉施設)</option>
+                            <option value="yoshiki-9">様式第九 (介護老人保健施設)</option>
+                            <option value="yoshiki-10">様式第十 (介護療養型医療施設)</option>
+                            <option value="yoshiki-11">様式第十一 (給付管理票)</option>
                         </select>
                     </div>
                     
-                    <div class="flex-1 overflow-y-auto p-6">
-                        <!-- 既存：居宅サービス計画書（２） -->
-                        <div id="form-yoshiki-2" class="bg-white p-6 shadow rounded border border-gray-300">
-                            <h3 class="text-center font-bold text-lg mb-4">居宅サービス計画書（２）</h3>
-                            <table class="w-full border-collapse border border-black text-sm">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="border border-black p-2 w-1/4">生活全般の解決すべき課題(ニーズ)</th>
-                                        <th class="border border-black p-2 w-1/4">目標（長期・短期）</th>
-                                        <th class="border border-black p-2 w-1/2">援助内容（サービス種別・頻度等）</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
-                                        <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
-                                        <td class="border border-black p-0"><textarea class="w-full h-32 p-2 outline-none resize-none"></textarea></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
-                        </div>
-
-                        <!-- 既存：サービス担当者会議の要点 -->
-                        <div id="form-yoshiki-8" class="hidden bg-white p-6 shadow rounded border border-gray-300">
-                            <h3 class="text-center font-bold text-lg mb-4">サービス担当者会議の要点</h3>
-                            <table class="w-full border-collapse border border-black text-sm">
-                                <tbody>
-                                    <tr>
-                                        <th class="border border-black p-2 bg-gray-100 w-1/4">開催日時</th>
-                                        <td class="border border-black p-0"><input type="text" class="w-full p-2 outline-none" placeholder="令和  年  月  日" /></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="border border-black p-2 bg-gray-100">検討した項目</th>
-                                        <td class="border border-black p-0"><textarea class="w-full h-20 p-2 outline-none resize-none"></textarea></td>
-                                    </tr>
-                                    <tr>
-                                        <th class="border border-black p-2 bg-gray-100">検討内容・結論</th>
-                                        <td class="border border-black p-0"><textarea class="w-full h-40 p-2 outline-none resize-none"></textarea></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
-                        </div>
-
-                        <!-- 新規：介護給付費明細書 様式第二 -->
-                        <div id="form-kyufu-2" class="hidden bg-white p-6 shadow rounded border border-gray-300">
+                    <div class="flex-1 overflow-y-auto p-4 md:p-6" id="form-container">
+                        
+                        <div id="form-yoshiki-2" class="bg-white p-4 shadow-md rounded border border-gray-300">
                             <h3 class="text-center font-bold text-lg mb-4">居宅サービス介護給付費明細書（様式第二）</h3>
-                            <div class="grid grid-cols-2 gap-4 text-xs mb-4">
-                                <table class="border-collapse border border-black w-full">
-                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">公費負担者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">公費受給者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">被保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">氏名</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">生年月日</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none" placeholder="1.明治 2.大正 3.昭和  年 月 日"></td></tr>
+                            <div class="text-xs text-right mb-2">平成 <input type="text" class="border-b border-black w-8 text-center outline-none"> 年 <input type="text" class="border-b border-black w-6 text-center outline-none"> 月分</div>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3 text-left">公費負担者番号</th><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">公費受給者番号</th><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">被保険者番号</th><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">氏名 (フリガナ)</th><td class="p-0"><input type="text" class="kaigo-input" placeholder="カナ / 漢字"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">生年月日 / 性別</th><td class="p-0 flex"><input type="text" class="kaigo-input w-2/3" placeholder="明・大・昭  年 月 日"><input type="text" class="kaigo-input w-1/3 border-l border-black" placeholder="1.男 2.女"></td></tr>
                                 </table>
-                                <table class="border-collapse border border-black w-full">
-                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">事業所番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">事業所名称</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">要介護状態区分</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none" placeholder="要支援・1・2・3・4・5"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">認定有効期間</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none" placeholder="平成  年 月 日 から"></td></tr>
-                                </table>
-                            </div>
-                            <h4 class="font-bold text-sm mb-2">給付費明細欄</h4>
-                            <table class="border-collapse border border-black w-full text-xs">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="border border-black p-1">サービス内容</th>
-                                        <th class="border border-black p-1 w-20">コード</th>
-                                        <th class="border border-black p-1 w-16">単位数</th>
-                                        <th class="border border-black p-1 w-12">回数</th>
-                                        <th class="border border-black p-1 w-20">ｻｰﾋﾞｽ単位数</th>
-                                        <th class="border border-black p-1 w-12">公費分</th>
-                                        <th class="border border-black p-1 w-32">摘要</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
-                        </div>
-
-                        <!-- 新規：介護給付費明細書 様式第三（短期入所） -->
-                        <div id="form-kyufu-3" class="hidden bg-white p-6 shadow rounded border border-gray-300">
-                            <h3 class="text-center font-bold text-lg mb-4">居宅サービス介護給付費明細書（短期入所生活介護 様式第三）</h3>
-                            <div class="grid grid-cols-2 gap-4 text-xs mb-4">
-                                <table class="border-collapse border border-black w-full">
-                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">公費負担者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">被保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">氏名</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                </table>
-                                <table class="border-collapse border border-black w-full">
-                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3">保険者番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">事業所番号</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
-                                    <tr><th class="border border-black bg-gray-100 p-1">要介護状態区分</th><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td></tr>
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="border border-black bg-gray-100 p-1 w-1/3 text-left">保険者番号</th><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">事業所番号 / 〒</th><td class="p-0 flex"><input type="text" class="kaigo-input w-2/3"><input type="text" class="kaigo-input w-1/3 border-l border-black" placeholder="〒"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">事業所名称</th><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">要介護状態区分</th><td class="p-0"><input type="text" class="kaigo-input" placeholder="要支援1 2・3・4・5"></td></tr>
+                                    <tr><th class="border border-black bg-gray-100 p-1 text-left">認定有効期間</th><td class="p-0"><input type="text" class="kaigo-input" placeholder="平成  年 月 日 から 〜 まで"></td></tr>
                                 </table>
                             </div>
-                            
-                            <table class="border-collapse border border-black w-full text-xs mb-4">
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
                                 <tr>
-                                    <th class="border border-black bg-gray-100 p-1 w-1/6">入所年月日</th><td class="border border-black p-0 w-1/6"><input type="text" class="w-full p-1 outline-none" placeholder="平成 年 月 日"></td>
-                                    <th class="border border-black bg-gray-100 p-1 w-1/6">退所年月日</th><td class="border border-black p-0 w-1/6"><input type="text" class="w-full p-1 outline-none" placeholder="平成 年 月 日"></td>
-                                    <th class="border border-black bg-gray-100 p-1 w-1/6">短期入所実日数</th><td class="border border-black p-0 w-1/6"><input type="number" class="w-full p-1 outline-none text-right" placeholder="日"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6">居宅サービス計画</th>
+                                    <td class="p-1 w-1/6 text-center"><input type="text" class="w-full text-center outline-none" placeholder="1.事業者 2.自己"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6">事業所番号</th>
+                                    <td class="p-0 w-1/6"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6">事業所名称</th>
+                                    <td class="p-0 w-1/6"><input type="text" class="kaigo-input"></td>
                                 </tr>
                             </table>
-
-                            <h4 class="font-bold text-sm mb-2">給付費明細欄</h4>
-                            <table class="border-collapse border border-black w-full text-xs">
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">給付費明細欄</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
                                 <thead class="bg-gray-100">
                                     <tr>
-                                        <th class="border border-black p-1">サービス内容</th>
-                                        <th class="border border-black p-1 w-20">コード</th>
-                                        <th class="border border-black p-1 w-16">単位数</th>
-                                        <th class="border border-black p-1 w-12">日数/回数</th>
-                                        <th class="border border-black p-1 w-20">ｻｰﾋﾞｽ単位数</th>
-                                        <th class="border border-black p-1 w-32">摘要</th>
+                                        <th class="border border-black p-1">サービス内容</th><th class="border border-black p-1 w-16">コード</th>
+                                        <th class="border border-black p-1 w-12">単位数</th><th class="border border-black p-1 w-10">回数</th>
+                                        <th class="border border-black p-1 w-16">ｻｰﾋﾞｽ単位数</th><th class="border border-black p-1 w-12">公費分</th>
+                                        <th class="border border-black p-1 w-16">公費単位数</th><th class="border border-black p-1 w-24">摘要</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none text-center"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="number" class="w-full p-1 outline-none text-right"></td><td class="border border-black p-0"><input type="text" class="w-full p-1 outline-none"></td>
-                                    </tr>
+                                    <tr><td class="p-0"><input type="text" class="kaigo-input"></td><td class="p-0"><input type="text" class="kaigo-input text-center"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><td class="p-0"><input type="text" class="kaigo-input"></td><td class="p-0"><input type="text" class="kaigo-input text-center"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><td class="p-0"><input type="text" class="kaigo-input"></td><td class="p-0"><input type="text" class="kaigo-input text-center"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="text" class="kaigo-input"></td></tr>
+                                </tbody>
+                            </table>
+                            <table class="w-full border-collapse border border-black text-xs">
+                                <thead><tr class="bg-gray-100"><th class="border border-black p-1 w-1/4">区分</th><th class="border border-black p-1">保険分</th><th class="border border-black p-1">公費分</th></tr></thead>
+                                <tbody>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">①計画単位数</th><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">②限度額管理対象単位数</th><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑥給付単位数</th><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑨単位数単価 / 給付率</th><td class="p-0 flex"><input type="number" class="kaigo-input w-1/2 text-right border-r border-black" placeholder="円"><input type="number" class="kaigo-input w-1/2 text-right" placeholder="/100"></td><td class="p-0 flex"><input type="number" class="kaigo-input w-1/2 text-right border-r border-black"><input type="number" class="kaigo-input w-1/2 text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑩保険・公費請求額(円)</th><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑪利用者負担額(円)</th><td class="p-0"><input type="number" class="kaigo-input text-right"></td><td class="p-0"><input type="number" class="kaigo-input text-right"></td></tr>
                                 </tbody>
                             </table>
                             <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
                         </div>
+
+                        <div id="form-yoshiki-3" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">居宅サービス明細書（短期入所生活介護: 様式第三）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="bg-gray-100 p-1 w-1/3 text-left border border-black">公費負担者/受給者番号</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/2 border-r border-black"><input type="text" class="kaigo-input w-1/2"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">被保険者番号/氏名</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/3 border-r border-black"><input type="text" class="kaigo-input w-2/3"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">生年月日 / 性別</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-2/3 border-r border-black"><input type="text" class="kaigo-input w-1/3"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">要介護状態区分</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </table>
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="bg-gray-100 p-1 w-1/3 text-left border border-black">保険者/事業所番号</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/2 border-r border-black"><input type="text" class="kaigo-input w-1/2"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">事業所名称</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">認定有効期間</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr>
+                                    <th class="bg-gray-100 p-1 w-1/6 border border-black">入所年月日</th><td class="p-0 w-1/6 border border-black"><input type="text" class="kaigo-input" placeholder="平 年 月 日"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6 border border-black">退所年月日</th><td class="p-0 w-1/6 border border-black"><input type="text" class="kaigo-input" placeholder="平 年 月 日"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6 border border-black">短期入所実日数</th><td class="p-0 w-1/6 border border-black"><input type="number" class="kaigo-input text-right" placeholder="日"></td>
+                                </tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">給付費明細欄</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <thead class="bg-gray-100">
+                                    <tr><th class="border border-black p-1">内容</th><th class="border border-black p-1">コード</th><th class="border border-black p-1">単位数</th><th class="border border-black p-1">日数</th><th class="border border-black p-1">ｻｰﾋﾞｽ単位</th><th class="border border-black p-1">公費対象</th><th class="border border-black p-1">摘要</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </tbody>
+                            </table>
+                            <table class="w-full border-collapse border border-black text-xs">
+                                <thead><tr class="bg-gray-100"><th class="border border-black p-1">区分</th><th class="border border-black p-1">保険分</th><th class="border border-black p-1">公費分</th></tr></thead>
+                                <tbody>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">①計画単位数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑦請求額(円)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-4" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">老健・短期入所療養介護明細書（様式第四）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="bg-gray-100 p-1 w-1/3 text-left border border-black">被保険者番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">氏名</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </table>
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="bg-gray-100 p-1 w-1/3 text-left border border-black">保険者/事業所番号</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/2 border-r border-black"><input type="text" class="kaigo-input w-1/2"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">要介護状態区分</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr>
+                                    <th class="bg-gray-100 p-1 w-1/6 border border-black">入所年月日</th><td class="p-0 w-1/6 border border-black"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6 border border-black">退所年月日</th><td class="p-0 w-1/6 border border-black"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 w-1/6 border border-black">短期入所実日数</th><td class="p-0 w-1/6 border border-black"><input type="number" class="kaigo-input"></td>
+                                </tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">緊急時治療管理・特定診療費等</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr><th class="bg-gray-100 p-1 border border-black">緊急時傷病名</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black">開始年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                <tr><th class="bg-gray-100 p-1 border border-black">処置・手術等(点数)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><th class="bg-gray-100 p-1 border border-black">放射線治療(点数)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                            </table>
+                            <table class="w-full border-collapse border border-black text-xs">
+                                <thead><tr class="bg-gray-100"><th class="border border-black p-1">区分</th><th class="border border-black p-1">保険分</th><th class="border border-black p-1">保険特定治療</th></tr></thead>
+                                <tbody>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">①計画単位数/点数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑦請求額(円)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-5" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">病院・診療所 短期入所療養介護（様式第五）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 w-1/3 text-left border border-black">被保険者番号/氏名</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/3 border-r border-black"><input type="text" class="kaigo-input w-2/3"></td></tr></table>
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 w-1/3 text-left border border-black">事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                            </div>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">特定診療費</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <thead class="bg-gray-100"><tr><th class="border border-black p-1">区分</th><th class="border border-black p-1">保険分(単位)</th><th class="border border-black p-1">傷病名/摘要</th></tr></thead>
+                                <tbody>
+                                    <tr><th class="bg-gray-50 p-1 text-left border border-black">1.指導管理等</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="bg-gray-50 p-1 text-left border border-black">2.単純エックス線</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </tbody>
+                            </table>
+                            <table class="w-full border-collapse border border-black text-xs">
+                                <thead><tr class="bg-gray-100"><th class="border border-black p-1">区分</th><th class="border border-black p-1">保険分</th><th class="border border-black p-1">保険分特定診療費</th></tr></thead>
+                                <tbody>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">①計画単位数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">⑦請求額(円)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-6" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">痴呆対応・特定施設入所者生活介護（様式第六）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">被保険者番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr>
+                                    <th class="bg-gray-100 p-1 border border-black">入所年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">退所年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">入所実日数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">外泊日数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">退所後状況</th><td class="p-0 border border-black"><input type="text" class="kaigo-input" placeholder="1.居宅 2.施設..."></td>
+                                </tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">明細・集計欄</h4>
+                            <table class="w-full border-collapse border border-black text-xs">
+                                <thead><tr class="bg-gray-100"><th class="border border-black p-1">区分</th><th class="border border-black p-1">保険分</th><th class="border border-black p-1">公費分</th></tr></thead>
+                                <tbody>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">①単位数合計</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                    <tr><th class="border border-black bg-gray-50 p-1 text-left">④請求額(円)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input text-right"></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-7" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">居宅介護支援介護給付費明細書（様式第七）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">単位数単価</th><td class="p-0 border border-black"><input type="number" class="kaigo-input" placeholder="円/単位"></td></tr></table>
+                            </div>
+                            <div class="border border-black mb-2">
+                                <table class="w-full border-collapse text-xs">
+                                    <tr>
+                                        <th class="bg-gray-100 p-1 border-r border-b border-black">被保険者番号</th><td class="p-0 border-r border-b border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-b border-black">氏名</th><td class="p-0 border-r border-b border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-b border-black">サービスコード</th><td class="p-0 border-b border-black"><input type="text" class="kaigo-input"></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-gray-100 p-1 border-r border-black">要介護状態区分</th><td class="p-0 border-r border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-black">依頼届出年月日</th><td class="p-0 border-r border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-black">請求金額</th><td class="p-0 border-black"><input type="number" class="kaigo-input"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="border border-black mb-2">
+                                <table class="w-full border-collapse text-xs">
+                                    <tr>
+                                        <th class="bg-gray-100 p-1 border-r border-b border-black">被保険者番号</th><td class="p-0 border-r border-b border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-b border-black">氏名</th><td class="p-0 border-r border-b border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-b border-black">サービスコード</th><td class="p-0 border-b border-black"><input type="text" class="kaigo-input"></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-gray-100 p-1 border-r border-black">要介護状態区分</th><td class="p-0 border-r border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-black">依頼届出年月日</th><td class="p-0 border-r border-black"><input type="text" class="kaigo-input"></td>
+                                        <th class="bg-gray-100 p-1 border-r border-black">請求金額</th><td class="p-0 border-black"><input type="number" class="kaigo-input"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-8" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">施設サービス（介護老人福祉施設: 様式第八）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">被保険者番号/氏名</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/3 border-r border-black"><input type="text" class="kaigo-input w-2/3"></td></tr></table>
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr>
+                                    <th class="bg-gray-100 p-1 border border-black">入所年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">退所年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">入所実日数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">外泊日数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td>
+                                </tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">食事提供費欄</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr><th class="bg-gray-100 p-1 border border-black">基本費用</th><th class="bg-gray-100 p-1 border border-black">日数</th><th class="bg-gray-100 p-1 border border-black">単価</th><th class="bg-gray-100 p-1 border border-black">金額</th><th class="bg-gray-100 p-1 border border-black">標準負担額</th><th class="bg-gray-100 p-1 border border-black">食事請求額</th></tr>
+                                <tr><td class="bg-gray-50 p-1 border border-black text-center">基本</td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-9" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">施設サービス（介護老人保健施設: 様式第九）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">被保険者番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr><th class="bg-gray-100 p-1 border border-black">入所年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black">主傷病</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">緊急時・特定治療・食事</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr><th class="bg-gray-100 p-1 border border-black">緊急時傷病名</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black">処置・手術等(点数)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                                <tr><th class="bg-gray-100 p-1 border border-black">食事延べ日数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black">食事請求額</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-10" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">施設サービス（介護療養型医療施設: 様式第十）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">被保険者番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                                <table class="w-full border-collapse border border-black"><tr><th class="bg-gray-100 p-1 text-left border border-black">事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr></table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr><th class="bg-gray-100 p-1 border border-black">入院年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black">主傷病</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">特定診療費・食事提供費</h4>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr><th class="bg-gray-100 p-1 border border-black w-1/4">1.指導管理等</th><td class="p-0 border border-black w-1/4"><input type="number" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black w-1/4">3.リハビリテーション</th><td class="p-0 border border-black w-1/4"><input type="number" class="kaigo-input"></td></tr>
+                                <tr><th class="bg-gray-100 p-1 border border-black">食事延べ日数</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td><th class="bg-gray-100 p-1 border border-black">食事請求額</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
+                        <div id="form-yoshiki-11" class="hidden bg-white p-4 shadow-md rounded border border-gray-300">
+                            <h3 class="text-center font-bold text-lg mb-4">給付管理票（様式第十一）</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">保険者番号/名</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/3 border-r border-black"><input type="text" class="kaigo-input w-2/3"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">被保険者番号/氏名</th><td class="p-0 border border-black flex"><input type="text" class="kaigo-input w-1/3 border-r border-black"><input type="text" class="kaigo-input w-2/3"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">生年月日</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </table>
+                                <table class="w-full border-collapse border border-black">
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">作成区分</th><td class="p-0 border border-black"><input type="text" class="kaigo-input" placeholder="1.事業者 2.自己"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">居宅介護支援事業所番号</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                    <tr><th class="bg-gray-100 p-1 text-left border border-black">事業所名</th><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td></tr>
+                                </table>
+                            </div>
+                            <table class="w-full border-collapse border border-black text-xs mb-4">
+                                <tr>
+                                    <th class="bg-gray-100 p-1 border border-black">支給限度基準額(単位/月)</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td>
+                                    <th class="bg-gray-100 p-1 border border-black">限度額適用期間</th><td class="p-0 border border-black"><input type="text" class="kaigo-input" placeholder="年 月 〜 年 月"></td>
+                                </tr>
+                            </table>
+                            <h4 class="font-bold text-sm bg-gray-200 p-1 border border-black border-b-0">居宅サービス提供事業者・単位数</h4>
+                            <table class="w-full border-collapse border border-black text-xs">
+                                <thead class="bg-gray-100">
+                                    <tr><th class="border border-black p-1">事業所名</th><th class="border border-black p-1">事業所番号</th><th class="border border-black p-1">種類名/識別</th><th class="border border-black p-1">種類コード</th><th class="border border-black p-1">計画単位数</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                                    <tr><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                                    <tr><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="text" class="kaigo-input"></td><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                                    <tr><th colspan="4" class="bg-gray-50 border border-black p-1 text-right">当月合計</th><td class="p-0 border border-black"><input type="number" class="kaigo-input"></td></tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-4 flex justify-end"><button class="bg-green-600 text-white px-6 py-2 rounded font-bold shadow hover:bg-green-700">保存</button></div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -362,16 +546,13 @@
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
         <div class="flex justify-around items-center h-16">
             <button onclick="switchTab('bookshelf')" id="nav-bookshelf" class="flex flex-col items-center justify-center w-full h-full text-blue-600 transition">
-                <span class="text-2xl mb-1">📚</span>
-                <span class="text-[10px] font-bold">本棚</span>
+                <span class="text-2xl mb-1">📚</span><span class="text-[10px] font-bold">本棚</span>
             </button>
             <button onclick="switchTab('add-data')" id="nav-add-data" class="flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
-                <span class="text-2xl mb-1">📸</span>
-                <span class="text-[10px] font-bold">追加</span>
+                <span class="text-2xl mb-1">📸</span><span class="text-[10px] font-bold">追加</span>
             </button>
             <button onclick="switchTab('practice')" id="nav-practice" class="hidden md:flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
-                <span class="text-2xl mb-1">💻</span>
-                <span class="text-[10px] font-bold">PC実践</span>
+                <span class="text-2xl mb-1">💻</span><span class="text-[10px] font-bold">PC実践</span>
             </button>
         </div>
     </div>
@@ -379,48 +560,29 @@
     <div id="action-modal" class="fixed inset-0 bg-black/50 z-[60] hidden flex-col justify-end">
         <div class="bg-white rounded-t-2xl p-6 w-full max-w-md mx-auto transform transition-transform translate-y-full" id="action-modal-content">
             <h3 id="modal-folder-title" class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 truncate"></h3>
-            
             <div class="space-y-3">
-                <button onclick="startStudyNormal()" class="w-full flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
-                    <span class="text-xl mr-3">📖</span>
-                    <span class="font-bold text-blue-800">保存されているデータで学習する</span>
-                </button>
-                
+                <button onclick="startStudyNormal()" class="w-full flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition"><span class="text-xl mr-3">📖</span><span class="font-bold text-blue-800">保存されているデータで学習する</span></button>
                 <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div class="flex items-center mb-2">
-                        <span class="text-xl mr-3">✨</span>
-                        <span class="font-bold text-green-800">AIに新しく問題を作らせる</span>
-                    </div>
+                    <div class="flex items-center mb-2"><span class="text-xl mr-3">✨</span><span class="font-bold text-green-800">AIに新しく問題を作らせる</span></div>
                     <div class="flex space-x-2 pl-8">
-                        <select id="modal-question-count" class="border border-green-300 rounded py-1 px-2 text-sm flex-grow">
-                            <option value="3">3問</option><option value="5">5問</option><option value="7">7問</option><option value="10">10問</option>
-                        </select>
+                        <select id="modal-question-count" class="border border-green-300 rounded py-1 px-2 text-sm flex-grow"><option value="3">3問</option><option value="5">5問</option><option value="7">7問</option><option value="10">10問</option></select>
                         <button onclick="startStudyGenerate()" id="modal-generate-btn" class="bg-green-600 text-white font-bold py-1 px-4 rounded text-sm hover:bg-green-700">作成</button>
                     </div>
                 </div>
-
-                <button onclick="confirmDeleteFolder()" class="w-full flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition mt-4">
-                    <span class="text-xl mr-3">🗑️</span>
-                    <span class="font-bold text-red-700">この小フォルダを削除する</span>
-                </button>
+                <button onclick="confirmDeleteFolder()" class="w-full flex items-center p-3 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition mt-4"><span class="text-xl mr-3">🗑️</span><span class="font-bold text-red-700">この小フォルダを削除する</span></button>
             </div>
             <button onclick="closeActionModal()" class="w-full mt-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg">キャンセル</button>
         </div>
     </div>
 
-
     <script>
-        // ==========================================
-        // 状態管理と初期化
-        // ==========================================
+        // 状態管理
         let studyData = {};
         let currentLargeFolder = null; 
         let selectedSmallPath = null; 
-
         window.currentTtsChunks = [];
         let isSpeaking = false;
         let ttsQueue = []; 
-
         let sortableBookshelf = null;
         let sortableMediums = null;
         let sortableSmalls = [];
@@ -428,21 +590,16 @@
         function stringToColor(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            const h = hash % 360;
-            return `hsl(${h}, 70%, 55%)`; 
+            return `hsl(${hash % 360}, 70%, 55%)`; 
         }
 
         function reorderObjectKeys(obj, newKeys) {
             const newObj = {};
-            newKeys.forEach(k => {
-                if (obj.hasOwnProperty(k)) newObj[k] = obj[k];
-            });
+            newKeys.forEach(k => { if (obj.hasOwnProperty(k)) newObj[k] = obj[k]; });
             return newObj;
         }
 
-        // ==========================================
-        // タブ・画面切り替え UI制御
-        // ==========================================
+        // タブ切り替え
         function switchTab(tabName) {
             document.getElementById('bookshelf-tab').classList.add('hidden');
             document.getElementById('add-data-tab').classList.add('hidden');
@@ -468,56 +625,21 @@
             window.scrollTo(0, 0);
         }
 
-        function showBookshelfGrid() {
-            currentLargeFolder = null;
-            document.getElementById('large-grid-view').classList.remove('hidden');
-            document.getElementById('folder-list-view').classList.add('hidden');
-            renderBookshelfGrid();
-        }
+        function showBookshelfGrid() { currentLargeFolder = null; document.getElementById('large-grid-view').classList.remove('hidden'); document.getElementById('folder-list-view').classList.add('hidden'); renderBookshelfGrid(); }
+        function openBook(largeFolderName) { currentLargeFolder = largeFolderName; document.getElementById('large-grid-view').classList.add('hidden'); document.getElementById('folder-list-view').classList.remove('hidden'); document.getElementById('current-book-title').textContent = `📖 ${largeFolderName}`; renderFolderList(); }
+        function closeStudyPage() { stopTtsPlayback(); switchTab('bookshelf'); }
 
-        function openBook(largeFolderName) {
-            currentLargeFolder = largeFolderName;
-            document.getElementById('large-grid-view').classList.add('hidden');
-            document.getElementById('folder-list-view').classList.remove('hidden');
-            document.getElementById('current-book-title').textContent = `📖 ${largeFolderName}`;
-            renderFolderList();
-        }
-
-        function closeStudyPage() {
-            stopTtsPlayback();
-            switchTab('bookshelf');
-        }
-
-        // ==========================================
-        // 学習画面のレンダリング（空白カット処理付き）
-        // ==========================================
+        // 学習画面レンダリング
         function renderStudyPage(extractedTexts, questions, folderPathStr) {
             document.getElementById('bookshelf-tab').classList.add('hidden');
             document.getElementById('add-data-tab').classList.add('hidden');
-            
-            const textArea = document.getElementById('text-area');
-            const readableText = document.getElementById('readable-text');
-            const quizArea = document.getElementById('quiz-area');
-            const quizContainer = document.getElementById('quiz-container');
-            const currentFolderDisplay = document.getElementById('current-folder-display');
-
-            textArea.classList.add('hidden'); 
-            quizArea.classList.add('hidden');
-            quizContainer.innerHTML = '';
-            currentFolderDisplay.textContent = folderPathStr;
+            const textArea = document.getElementById('text-area'); const readableText = document.getElementById('readable-text'); const quizArea = document.getElementById('quiz-area'); const quizContainer = document.getElementById('quiz-container');
+            textArea.classList.add('hidden'); quizArea.classList.add('hidden'); quizContainer.innerHTML = ''; document.getElementById('current-folder-display').textContent = folderPathStr;
 
             if (extractedTexts && extractedTexts.length > 0) {
-                const cleanedTexts = extractedTexts.map(t => {
-                    if(!t) return '';
-                    return t.replace(/(\r\n|\n|\r)/g, '\n')
-                            .replace(/\n{3,}/g, '\n\n')
-                            .trim()
-                            .replace(/\n/g, '<br />');
-                }).filter(t => t !== '');
-
+                const cleanedTexts = extractedTexts.map(t => t ? t.replace(/(\r\n|\n|\r)/g, '\n').replace(/\n{3,}/g, '\n\n').trim().replace(/\n/g, '<br />') : '').filter(t => t !== '');
                 readableText.innerHTML = cleanedTexts.join('<br /><hr class="my-6 border-2 border-purple-300" /><br />');
-                textArea.classList.remove('hidden');
-                buildTtsChunksAndUI();
+                textArea.classList.remove('hidden'); buildTtsChunksAndUI();
             }
 
             if (questions && questions.length > 0) {
@@ -525,537 +647,140 @@
                     let optionsHtml = '';
                     if (q.options && q.options.length > 0) {
                         optionsHtml = '<div class="space-y-2 mt-4">';
-                        q.options.forEach((opt) => {
-                            optionsHtml += `
-                                <label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-base sm:text-lg">
-                                    <input type="radio" name="q${index}" class="mr-2" /> ${opt}
-                                </label>
-                            `;
-                        });
+                        q.options.forEach((opt) => { optionsHtml += `<label class="block p-3 border rounded bg-white hover:bg-blue-50 cursor-pointer text-base sm:text-lg"><input type="radio" name="q${index}" class="mr-2" /> ${opt}</label>`; });
                         optionsHtml += '</div>';
-                    } else {
-                        optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-base sm:text-lg" placeholder="解答を入力" />`;
-                    }
-
-                    const questionBlock = `
+                    } else optionsHtml = `<input type="text" class="mt-4 border p-3 rounded w-full sm:w-64 text-base sm:text-lg" placeholder="解答を入力" />`;
+                    
+                    quizContainer.innerHTML += `
                         <div class="p-4 bg-gray-50 rounded-lg border">
-                            <h3 class="font-bold text-base sm:text-lg text-blue-900 leading-relaxed">Q${index + 1}. ${q.question_text}</h3>
-                            ${optionsHtml}
-                            <button class="mt-4 bg-blue-600 text-white font-bold py-2 px-4 rounded shadow" onclick="document.getElementById('ans${index}').classList.remove('hidden')">
-                                答えと解説を見る
-                            </button>
-                            <div id="ans${index}" class="hidden mt-4 p-4 bg-green-100 text-green-900 rounded border border-green-300">
-                                <p class="font-bold text-lg sm:text-xl mb-2">正解：${q.answer}</p>
-                                <hr class="border-green-300 mb-2" />
-                                <p class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">${q.explanation}</p>
-                            </div>
-                        </div>
-                    `;
-                    quizContainer.innerHTML += questionBlock;
+                            <h3 class="font-bold text-base sm:text-lg text-blue-900 leading-relaxed">Q${index + 1}. ${q.question_text}</h3>${optionsHtml}
+                            <button class="mt-4 bg-blue-600 text-white font-bold py-2 px-4 rounded shadow" onclick="document.getElementById('ans${index}').classList.remove('hidden')">答えと解説を見る</button>
+                            <div id="ans${index}" class="hidden mt-4 p-4 bg-green-100 text-green-900 rounded border border-green-300"><p class="font-bold text-lg sm:text-xl mb-2">正解：${q.answer}</p><hr class="border-green-300 mb-2" /><p class="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">${q.explanation}</p></div>
+                        </div>`;
                 });
                 quizArea.classList.remove('hidden');
             }
-
-            document.getElementById('study-page').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('study-page').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function changeFontSize(sizeMode) {
-            document.getElementById('readable-text').className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`;
-        }
+        function changeFontSize(sizeMode) { document.getElementById('readable-text').className = `text-gray-700 bg-gray-50 p-4 sm:p-6 rounded-lg border text-size-${sizeMode}`; }
 
-        // ==========================================
-        // レンダリング（本棚・リスト）
-        // ==========================================
+        // 本棚レンダリング
         function renderBookshelfGrid() {
-            const grid = document.getElementById('bookshelf-grid');
-            grid.innerHTML = '';
-            
+            const grid = document.getElementById('bookshelf-grid'); grid.innerHTML = '';
             const largeFolders = Object.keys(studyData);
-            if (largeFolders.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>追加画面からスキャンしてください。</div>';
-                return;
-            }
+            if (largeFolders.length === 0) { grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">まだ本がありません。<br>追加画面からスキャンしてください。</div>'; return; }
 
             largeFolders.forEach(L => {
                 const color = stringToColor(L);
-                const bookHTML = `
-                    <div data-key="${L}" class="book-cover aspect-[2/3] rounded-r-md flex items-center justify-center p-3 cursor-pointer relative grab-handle" style="background: linear-gradient(135deg, ${color}, #3b82f6);" onclick="openBook('${L}')">
-                        <div class="book-spine"></div>
-                        <span class="text-white font-bold text-center drop-shadow-md text-sm sm:text-base break-words w-full px-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">${L}</span>
-                    </div>
-                `;
-                grid.insertAdjacentHTML('beforeend', bookHTML);
+                grid.insertAdjacentHTML('beforeend', `<div data-key="${L}" class="book-cover aspect-[2/3] rounded-r-md flex items-center justify-center p-3 cursor-pointer relative grab-handle" style="background: linear-gradient(135deg, ${color}, #3b82f6);" onclick="openBook('${L}')"><div class="book-spine"></div><span class="text-white font-bold text-center drop-shadow-md text-sm sm:text-base break-words w-full px-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">${L}</span></div>`);
             });
 
             if (sortableBookshelf) sortableBookshelf.destroy();
-            sortableBookshelf = new Sortable(grid, {
-                animation: 150,
-                delay: 200, 
-                delayOnTouchOnly: true,
-                onEnd: async function () {
-                    const newOrder = Array.from(grid.children).map(el => el.getAttribute('data-key'));
-                    studyData = reorderObjectKeys(studyData, newOrder);
-                    await syncDataWithServer();
-                }
-            });
+            sortableBookshelf = new Sortable(grid, { animation: 150, delay: 200, delayOnTouchOnly: true, onEnd: async function () { studyData = reorderObjectKeys(studyData, Array.from(grid.children).map(el => el.getAttribute('data-key'))); await syncDataWithServer(); }});
         }
 
         function renderFolderList() {
-            const container = document.getElementById('medium-list-container');
-            container.innerHTML = '';
-            
+            const container = document.getElementById('medium-list-container'); container.innerHTML = '';
             if (!studyData[currentLargeFolder]) return;
-
             const mediumFolders = Object.keys(studyData[currentLargeFolder]);
-            if (mediumFolders.length === 0) {
-                container.innerHTML = '<p class="text-gray-400">データがありません</p>';
-                return;
-            }
+            if (mediumFolders.length === 0) { container.innerHTML = '<p class="text-gray-400">データがありません</p>'; return; }
 
             mediumFolders.forEach(M => {
                 let smallHTML = '';
-                const smallFolders = Object.keys(studyData[currentLargeFolder][M] || {});
-                
-                smallFolders.forEach(S => {
-                    smallHTML += `
-                        <div data-s-key="${S}" onclick="openActionModal('${currentLargeFolder}', '${M}', '${S}')" class="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-blue-50 transition shadow-sm grab-handle">
-                            <span class="font-bold text-gray-700 text-sm sm:text-base">📄 ${S}</span>
-                            <span class="text-xs text-blue-500 font-bold bg-blue-100 px-2 py-1 rounded">学習</span>
-                        </div>
-                    `;
-                });
-
-                const mediumHTML = `
-                    <div data-m-key="${M}" class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-300 shadow-sm">
-                        <div class="flex items-center mb-3 grab-handle">
-                            <span class="text-gray-400 mr-2 text-xl">≡</span>
-                            <h3 class="font-bold text-lg sm:text-xl text-indigo-900">📁 ${M}</h3>
-                        </div>
-                        <div class="small-list-container space-y-2 pl-2 sm:pl-4" data-parent-m="${M}">
-                            ${smallHTML}
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', mediumHTML);
+                Object.keys(studyData[currentLargeFolder][M] || {}).forEach(S => { smallHTML += `<div data-s-key="${S}" onclick="openActionModal('${currentLargeFolder}', '${M}', '${S}')" class="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-blue-50 transition shadow-sm grab-handle"><span class="font-bold text-gray-700 text-sm sm:text-base">📄 ${S}</span><span class="text-xs text-blue-500 font-bold bg-blue-100 px-2 py-1 rounded">学習</span></div>`; });
+                container.insertAdjacentHTML('beforeend', `<div data-m-key="${M}" class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-300 shadow-sm"><div class="flex items-center mb-3 grab-handle"><span class="text-gray-400 mr-2 text-xl">≡</span><h3 class="font-bold text-lg sm:text-xl text-indigo-900">📁 ${M}</h3></div><div class="small-list-container space-y-2 pl-2 sm:pl-4" data-parent-m="${M}">${smallHTML}</div></div>`);
             });
 
             if (sortableMediums) sortableMediums.destroy();
-            sortableMediums = new Sortable(container, {
-                animation: 150,
-                handle: '.grab-handle',
-                delay: 200, delayOnTouchOnly: true,
-                onEnd: async function () {
-                    const newOrder = Array.from(container.children).map(el => el.getAttribute('data-m-key'));
-                    studyData[currentLargeFolder] = reorderObjectKeys(studyData[currentLargeFolder], newOrder);
-                    await syncDataWithServer();
-                }
-            });
+            sortableMediums = new Sortable(container, { animation: 150, handle: '.grab-handle', delay: 200, delayOnTouchOnly: true, onEnd: async function () { studyData[currentLargeFolder] = reorderObjectKeys(studyData[currentLargeFolder], Array.from(container.children).map(el => el.getAttribute('data-m-key'))); await syncDataWithServer(); }});
 
-            sortableSmalls.forEach(s => s.destroy());
-            sortableSmalls = [];
+            sortableSmalls.forEach(s => s.destroy()); sortableSmalls = [];
             document.querySelectorAll('.small-list-container').forEach(listEl => {
                 const parentM = listEl.getAttribute('data-parent-m');
-                const s = new Sortable(listEl, {
-                    animation: 150,
-                    delay: 200, delayOnTouchOnly: true,
-                    onEnd: async function () {
-                        const newOrder = Array.from(listEl.children).map(el => el.getAttribute('data-s-key'));
-                        studyData[currentLargeFolder][parentM] = reorderObjectKeys(studyData[currentLargeFolder][parentM], newOrder);
-                        await syncDataWithServer();
-                    }
-                });
-                sortableSmalls.push(s);
+                sortableSmalls.push(new Sortable(listEl, { animation: 150, delay: 200, delayOnTouchOnly: true, onEnd: async function () { studyData[currentLargeFolder][parentM] = reorderObjectKeys(studyData[currentLargeFolder][parentM], Array.from(listEl.children).map(el => el.getAttribute('data-s-key'))); await syncDataWithServer(); }}));
             });
         }
 
-        // ==========================================
-        // アクションモーダル（メニュー）
-        // ==========================================
-        function openActionModal(L, M, S) {
-            selectedSmallPath = { L, M, S };
-            document.getElementById('modal-folder-title').textContent = `📄 ${S}`;
-            const modal = document.getElementById('action-modal');
-            const content = document.getElementById('action-modal-content');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            setTimeout(() => { content.classList.remove('translate-y-full'); }, 10);
-        }
-
-        function closeActionModal() {
-            const modal = document.getElementById('action-modal');
-            const content = document.getElementById('action-modal-content');
-            content.classList.add('translate-y-full');
-            setTimeout(() => { 
-                modal.classList.add('hidden'); 
-                modal.classList.remove('flex');
-                selectedSmallPath = null;
-            }, 300);
-        }
-
-        function startStudyNormal() {
-            const { L, M, S } = selectedSmallPath;
-            closeActionModal();
-            const records = studyData[L][M][S];
-            let allTexts = [], allQuestions = [];
-            records.forEach(r => {
-                if (r.extracted_text) allTexts.push(r.extracted_text);
-                if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions);
-                if (r.questions) allQuestions = allQuestions.concat(r.questions);
-            });
-            renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`);
-        }
-
+        // アクションモーダル
+        function openActionModal(L, M, S) { selectedSmallPath = { L, M, S }; document.getElementById('modal-folder-title').textContent = `📄 ${S}`; const modal = document.getElementById('action-modal'); const content = document.getElementById('action-modal-content'); modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => { content.classList.remove('translate-y-full'); }, 10); }
+        function closeActionModal() { const modal = document.getElementById('action-modal'); const content = document.getElementById('action-modal-content'); content.classList.add('translate-y-full'); setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); selectedSmallPath = null; }, 300); }
+        function startStudyNormal() { const { L, M, S } = selectedSmallPath; closeActionModal(); const records = studyData[L][M][S]; let allTexts = [], allQuestions = []; records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions); if (r.questions) allQuestions = allQuestions.concat(r.questions); }); renderStudyPage(allTexts, allQuestions, `📁 ${L} > ${M} > ${S}`); }
         async function startStudyGenerate() {
-            const { L, M, S } = selectedSmallPath;
-            const records = studyData[L][M][S];
-            let allTexts = [];
-            records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); });
-            const combinedText = allTexts.join("\n\n");
-            
-            if (!combinedText.trim()) {
-                alert("テキストデータがないため、新しい問題は作成できません。");
-                return;
-            }
-
-            const count = document.getElementById('modal-question-count').value;
-            const btn = document.getElementById('modal-generate-btn');
-            btn.textContent = "処理中..."; btn.disabled = true;
-
-            try {
-                const response = await fetch("/api/generate-quiz", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: combinedText, num_questions: parseInt(count) })
-                });
-                if (!response.ok) throw new Error("問題の生成に失敗しました");
-                const data = await response.json();
-                
-                closeActionModal();
-                renderStudyPage(allTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`);
-
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                btn.textContent = "作成"; btn.disabled = false;
-            }
+            const { L, M, S } = selectedSmallPath; const records = studyData[L][M][S]; let allTexts = []; records.forEach(r => { if (r.extracted_text) allTexts.push(r.extracted_text); }); const combinedText = allTexts.join("\n\n");
+            if (!combinedText.trim()) return alert("テキストデータがないため、新しい問題は作成できません。");
+            const count = document.getElementById('modal-question-count').value; const btn = document.getElementById('modal-generate-btn'); btn.textContent = "処理中..."; btn.disabled = true;
+            try { const response = await fetch("/api/generate-quiz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: combinedText, num_questions: parseInt(count) }) }); if (!response.ok) throw new Error("問題の生成に失敗しました"); const data = await response.json(); closeActionModal(); renderStudyPage(allTexts, data.generated_questions || [], `📁 ${L} > ${M} > ${S} (新規: ${count}問)`); } catch (error) { alert(error.message); } finally { btn.textContent = "作成"; btn.disabled = false; }
         }
-
         async function confirmDeleteFolder() {
             const { L, M, S } = selectedSmallPath;
             if (confirm(`「${S}」のデータを全て削除しますか？`)) {
-                closeActionModal();
-                const latestData = await fetchLatestData();
-                if (latestData) studyData = latestData;
-
-                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) {
-                    delete studyData[L][M][S];
-                    if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M];
-                    if (Object.keys(studyData[L]).length === 0) {
-                        delete studyData[L];
-                        await syncDataWithServer();
-                        showBookshelfGrid(); 
-                        return;
-                    }
-                    await syncDataWithServer();
-                }
+                closeActionModal(); const latestData = await fetchLatestData(); if (latestData) studyData = latestData;
+                if (studyData[L] && studyData[L][M] && studyData[L][M][S]) { delete studyData[L][M][S]; if (Object.keys(studyData[L][M]).length === 0) delete studyData[L][M]; if (Object.keys(studyData[L]).length === 0) { delete studyData[L]; await syncDataWithServer(); showBookshelfGrid(); return; } await syncDataWithServer(); }
                 renderFolderList(); 
             }
         }
 
-        // ==========================================
-        // サーバー通信・データ管理
-        // ==========================================
-        async function fetchLatestData() {
-            try {
-                const url = "/api/load-data?t=" + new Date().getTime();
-                const response = await fetch(url, { cache: 'no-store' });
-                if (response.ok) {
-                    const d = await response.json();
-                    if (d && Object.keys(d).length > 0) return d;
-                }
-            } catch (e) {} return null;
-        }
-
-        async function syncDataWithServer() {
-            try {
-                const response = await fetch("/api/save-data", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: studyData })
-                });
-                if (!response.ok) { alert("⚠️ 保存失敗"); return false; }
-                return true;
-            } catch (e) { alert("⚠️ 通信エラー"); return false; }
-        }
-
-        async function loadDataFromServer() {
-            const latestData = await fetchLatestData();
-            if (latestData) {
-                studyData = latestData;
-                if (!document.getElementById('bookshelf-tab').classList.contains('hidden')) {
-                    if (currentLargeFolder) renderFolderList();
-                    else renderBookshelfGrid();
-                }
-            }
-        }
-
+        // サーバー通信
+        async function fetchLatestData() { try { const res = await fetch("/api/load-data?t=" + new Date().getTime(), { cache: 'no-store' }); if (res.ok) { const d = await res.json(); if (d && Object.keys(d).length > 0) return d; } } catch (e) {} return null; }
+        async function syncDataWithServer() { try { const res = await fetch("/api/save-data", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: studyData }) }); if (!res.ok) { alert("⚠️ 保存失敗"); return false; } return true; } catch (e) { alert("⚠️ 通信エラー"); return false; } }
+        async function loadDataFromServer() { const latestData = await fetchLatestData(); if (latestData) { studyData = latestData; if (!document.getElementById('bookshelf-tab').classList.contains('hidden')) { if (currentLargeFolder) renderFolderList(); else renderBookshelfGrid(); } } }
         function updateDataLists() {
-            const listL = document.getElementById('list-large'), listM = document.getElementById('list-medium'), listS = document.getElementById('list-small');
-            listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
-            let setL = new Set(), setM = new Set(), setS = new Set();
-            for (const L in studyData) {
-                setL.add(L);
-                for (const M in studyData[L]) {
-                    setM.add(M);
-                    for (const S in studyData[L][M]) { setS.add(S); }
-                }
-            }
-            setL.forEach(v => listL.appendChild(new Option(v)));
-            setM.forEach(v => listM.appendChild(new Option(v)));
-            setS.forEach(v => listS.appendChild(new Option(v)));
+            const listL = document.getElementById('list-large'), listM = document.getElementById('list-medium'), listS = document.getElementById('list-small'); listL.innerHTML = ''; listM.innerHTML = ''; listS.innerHTML = '';
+            let setL = new Set(), setM = new Set(), setS = new Set(); for (const L in studyData) { setL.add(L); for (const M in studyData[L]) { setM.add(M); for (const S in studyData[L][M]) { setS.add(S); } } }
+            setL.forEach(v => listL.appendChild(new Option(v))); setM.forEach(v => listM.appendChild(new Option(v))); setS.forEach(v => listS.appendChild(new Option(v)));
         }
+        async function saveToFolder(L, M, S, data) { L = L || '未分類'; M = M || '未分類'; S = S || '未分類'; const latestData = await fetchLatestData(); if (latestData) studyData = latestData; if (!studyData[L]) studyData[L] = {}; if (!studyData[L][M]) studyData[L][M] = {}; if (!studyData[L][M][S]) studyData[L][M][S] = []; studyData[L][M][S].push(data); await syncDataWithServer(); switchTab('bookshelf'); openBook(L); }
 
-        async function saveToFolder(large, medium, small, data) {
-            large = large || '未分類'; medium = medium || '未分類'; small = small || '未分類';
-            const latestData = await fetchLatestData();
-            if (latestData) studyData = latestData;
+        loadDataFromServer(); setInterval(loadDataFromServer, 30000);
 
-            if (!studyData[large]) studyData[large] = {};
-            if (!studyData[large][medium]) studyData[large][medium] = {};
-            if (!studyData[large][medium][small]) studyData[large][medium][small] = [];
-            studyData[large][medium][small].push(data);
-            
-            await syncDataWithServer();
-            switchTab('bookshelf');
-            openBook(large);
-        }
-
-        loadDataFromServer();
-        setInterval(loadDataFromServer, 30000);
-
-        // ==========================================
-        // 読み上げ（TTS）関連
-        // ==========================================
+        // TTS
         function buildTtsChunksAndUI() {
-            window.currentTtsChunks = [];
-            document.getElementById('tts-mode').innerHTML = '<option value="all">すべて読上</option>';
-            let currentChunkText = "", currentChunkTitle = "ページ上部";
-            const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            
-            while(node = walker.nextNode()) {
-                if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) {
-                    if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
-                    let rawTitle = (node.innerText || node.textContent).trim();
-                    currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle;
-                    currentChunkText = rawTitle + "。\n";
-                } else if (node.nodeType === Node.TEXT_NODE) {
-                    currentChunkText += node.textContent + " ";
-                }
-            }
+            window.currentTtsChunks = []; document.getElementById('tts-mode').innerHTML = '<option value="all">すべて読上</option>'; let currentChunkText = "", currentChunkTitle = "ページ上部"; const walker = document.createTreeWalker(document.getElementById('readable-text'), NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null, false); let node;
+            while(node = walker.nextNode()) { if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) { if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() }); let rawTitle = (node.innerText || node.textContent).trim(); currentChunkTitle = rawTitle.length > 15 ? rawTitle.substring(0, 15) + '...' : rawTitle; currentChunkText = rawTitle + "。\n"; } else if (node.nodeType === Node.TEXT_NODE) { currentChunkText += node.textContent + " "; } }
             if (currentChunkText.trim()) window.currentTtsChunks.push({ title: currentChunkTitle, text: currentChunkText.trim() });
-
-            if (window.currentTtsChunks.length > 1) {
-                const groupFrom = document.createElement('optgroup'); groupFrom.label = "▼ ここから最後まで ▼";
-                window.currentTtsChunks.forEach((c, i) => groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`);
-                document.getElementById('tts-mode').appendChild(groupFrom);
-                const groupOnly = document.createElement('optgroup'); groupOnly.label = "▼ この部分のみ ▼";
-                window.currentTtsChunks.forEach((c, i) => groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`);
-                document.getElementById('tts-mode').appendChild(groupOnly);
-            }
+            if (window.currentTtsChunks.length > 1) { const groupFrom = document.createElement('optgroup'); groupFrom.label = "▼ ここから最後まで ▼"; window.currentTtsChunks.forEach((c, i) => groupFrom.innerHTML += `<option value="from_${i}">${c.title} 〜 最後</option>`); document.getElementById('tts-mode').appendChild(groupFrom); const groupOnly = document.createElement('optgroup'); groupOnly.label = "▼ この部分のみ ▼"; window.currentTtsChunks.forEach((c, i) => groupOnly.innerHTML += `<option value="only_${i}">${c.title} (単独)</option>`); document.getElementById('tts-mode').appendChild(groupOnly); }
         }
-
-        function resetTtsUI() {
-            document.getElementById('tts-icon').textContent = '🔊'; document.getElementById('tts-text').textContent = '再生';
-            const container = document.getElementById('tts-player-container');
-            const btn = document.getElementById('tts-btn');
-            const mode = document.getElementById('tts-mode');
-            container.classList.replace('bg-pink-50', 'bg-indigo-50');
-            container.classList.replace('border-pink-300', 'border-indigo-200');
-            btn.classList.replace('text-pink-700', 'text-indigo-700');
-            btn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100');
-            mode.classList.replace('text-pink-700', 'text-indigo-700');
-            mode.classList.replace('border-pink-300', 'border-indigo-200');
-        }
-
-        function setTtsUIPlaying() {
-            document.getElementById('tts-icon').textContent = '⏹️'; document.getElementById('tts-text').textContent = '停止';
-            const container = document.getElementById('tts-player-container');
-            const btn = document.getElementById('tts-btn');
-            const mode = document.getElementById('tts-mode');
-            container.classList.replace('bg-indigo-50', 'bg-pink-50');
-            container.classList.replace('border-indigo-200', 'border-pink-300');
-            btn.classList.replace('text-indigo-700', 'text-pink-700');
-            btn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100');
-            mode.classList.replace('text-indigo-700', 'text-pink-700');
-            mode.classList.replace('border-indigo-200', 'border-pink-300');
-        }
-
+        function resetTtsUI() { document.getElementById('tts-icon').textContent = '🔊'; document.getElementById('tts-text').textContent = '再生'; const container = document.getElementById('tts-player-container'); const btn = document.getElementById('tts-btn'); const mode = document.getElementById('tts-mode'); container.classList.replace('bg-pink-50', 'bg-indigo-50'); container.classList.replace('border-pink-300', 'border-indigo-200'); btn.classList.replace('text-pink-700', 'text-indigo-700'); btn.classList.replace('hover:bg-pink-100', 'hover:bg-indigo-100'); mode.classList.replace('text-pink-700', 'text-indigo-700'); mode.classList.replace('border-pink-300', 'border-indigo-200'); }
+        function setTtsUIPlaying() { document.getElementById('tts-icon').textContent = '⏹️'; document.getElementById('tts-text').textContent = '停止'; const container = document.getElementById('tts-player-container'); const btn = document.getElementById('tts-btn'); const mode = document.getElementById('tts-mode'); container.classList.replace('bg-indigo-50', 'bg-pink-50'); container.classList.replace('border-indigo-200', 'border-pink-300'); btn.classList.replace('text-indigo-700', 'text-pink-700'); btn.classList.replace('hover:bg-indigo-100', 'hover:bg-pink-100'); mode.classList.replace('text-indigo-700', 'text-pink-700'); mode.classList.replace('border-indigo-200', 'border-pink-300'); }
         function stopTtsPlayback() { isSpeaking = false; ttsQueue = []; window.speechSynthesis.cancel(); resetTtsUI(); }
+        function playNextTtsQueue() { if (!isSpeaking || ttsQueue.length === 0) { stopTtsPlayback(); return; } let text = ttsQueue.shift(); if (!/[。！？.!?]$/.test(text)) text += "。"; const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'ja-JP'; utterance.rate = 1.0; utterance.onend = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); }; utterance.onerror = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); }; setTimeout(() => window.speechSynthesis.speak(utterance), 50); }
+        document.getElementById('tts-btn').addEventListener('click', function() { if (isSpeaking) { stopTtsPlayback(); return; } let textToSpeak = ""; const mode = document.getElementById('tts-mode').value; if (mode === 'all') textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n'); else if (mode.startsWith('from_')) textToSpeak = window.currentTtsChunks.slice(parseInt(mode.split('_')[1])).map(c => c.text).join('\n\n'); else if (mode.startsWith('only_')) textToSpeak = window.currentTtsChunks[parseInt(mode.split('_')[1])].text; if (!textToSpeak || !textToSpeak.trim()) textToSpeak = document.getElementById('readable-text').innerText || document.getElementById('readable-text').textContent; if (!textToSpeak || !textToSpeak.trim()) return alert("読み上げるテキストがありません。"); textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([①-⑳])/g, '\n$1、'); ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak]; ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0); isSpeaking = true; setTtsUIPlaying(); window.speechSynthesis.cancel(); playNextTtsQueue(); });
 
-        function playNextTtsQueue() {
-            if (!isSpeaking || ttsQueue.length === 0) { stopTtsPlayback(); return; }
-            let text = ttsQueue.shift();
-            if (!/[。！？.!?]$/.test(text)) text += "。";
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ja-JP'; utterance.rate = 1.0;
-            utterance.onend = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); };
-            utterance.onerror = () => { if (isSpeaking) setTimeout(playNextTtsQueue, 400); };
-            setTimeout(() => window.speechSynthesis.speak(utterance), 50);
-        }
-
-        document.getElementById('tts-btn').addEventListener('click', function() {
-            if (isSpeaking) { stopTtsPlayback(); return; }
-            let textToSpeak = ""; const mode = document.getElementById('tts-mode').value;
-            if (mode === 'all') textToSpeak = window.currentTtsChunks.map(c => c.text).join('\n\n');
-            else if (mode.startsWith('from_')) textToSpeak = window.currentTtsChunks.slice(parseInt(mode.split('_')[1])).map(c => c.text).join('\n\n');
-            else if (mode.startsWith('only_')) textToSpeak = window.currentTtsChunks[parseInt(mode.split('_')[1])].text;
-
-            if (!textToSpeak || !textToSpeak.trim()) textToSpeak = document.getElementById('readable-text').innerText || document.getElementById('readable-text').textContent;
-            if (!textToSpeak || !textToSpeak.trim()) return alert("読み上げるテキストがありません。");
-
-            textToSpeak = textToSpeak.replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2').replace(/([0-9０-９]+)[-ー]([0-9０-９]+)/g, '$1の$2');
-            textToSpeak = textToSpeak.replace(/([①-⑳])/g, '\n$1、');
-
-            ttsQueue = textToSpeak.match(/[^。！？\n]+[。！？\n]*/g) || [textToSpeak];
-            ttsQueue = ttsQueue.map(s => s.trim()).filter(s => s.length > 0);
-
-            isSpeaking = true; setTtsUIPlaying(); window.speechSynthesis.cancel(); playNextTtsQueue(); 
-        });
-
-        // ==========================================
-        // ★修正追加★ ファイル入力の切り替え・解析処理
-        // ==========================================
-        function toggleFileType() {
-            const fileType = document.querySelector('input[name="file-type"]:checked').value;
-            const imgInput = document.getElementById('image-upload');
-            const pdfInput = document.getElementById('pdf-upload');
-            const promptText = document.getElementById('upload-prompt-text');
-            const promptSubText = document.getElementById('upload-prompt-subtext');
-
-            if (fileType === 'image') {
-                imgInput.classList.remove('hidden');
-                pdfInput.classList.add('hidden');
-                promptText.textContent = "📸 複数枚の写真を選択";
-                promptSubText.textContent = "いつものアルバムから選べます";
-            } else {
-                imgInput.classList.add('hidden');
-                pdfInput.classList.remove('hidden');
-                promptText.textContent = "📄 PDFファイルを選択";
-                promptSubText.textContent = "端末内のPDFを選べます";
-            }
-            
-            imgInput.value = '';
-            pdfInput.value = '';
-            document.getElementById('file-name').innerHTML = '';
-        }
-
-        const compressImage = async (file, maxWidth = 1200) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image(); img.src = event.target.result;
-                    img.onload = () => {
-                        let width = img.width, height = img.height;
-                        if (width > maxWidth || height > maxWidth) {
-                            if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
-                            else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
-                        }
-                        const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                        canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() })), 'image/jpeg', 0.8);
-                    };
-                    img.onerror = reject;
-                };
-                reader.onerror = reject;
-            });
-        };
-
-        const imageInput = document.getElementById('image-upload');
-        const pdfInput = document.getElementById('pdf-upload');
-        const fileNameDisplay = document.getElementById('file-name');
-        const extractBtn = document.getElementById('extract-btn');
-
-        function handleFileSelect(e) {
-            if(e.target.files.length > 0) {
-                const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>');
-                const typeIcon = e.target.id === 'image-upload' ? '📸' : '📄';
-                fileNameDisplay.innerHTML = `${typeIcon} ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`;
-            } else fileNameDisplay.innerHTML = '';
-        }
-
-        imageInput.addEventListener('change', handleFileSelect);
-        pdfInput.addEventListener('change', handleFileSelect);
-
-        extractBtn.addEventListener('click', async function() {
-            const fileType = document.querySelector('input[name="file-type"]:checked').value;
-            const activeInput = fileType === 'image' ? imageInput : pdfInput;
-
-            if(!activeInput.files.length) return alert("ファイルを選択してください！");
-            
-            const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim();
-            const mode = document.querySelector('input[name="scan-mode"]:checked').value;
-            
-            extractBtn.textContent = "⚙️ ファイルを準備中..."; extractBtn.disabled = true; extractBtn.classList.replace('bg-blue-600', 'bg-gray-400');
-            
-            let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name));
-            let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = [];
-            for (let i = 0; i < filesArray.length; i++) {
-                if (mode === "workbook") qPerFile.push(1);
-                else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); }
-            }
-
+        // ファイルアップロード
+        function toggleFileType() { const fileType = document.querySelector('input[name="file-type"]:checked').value; const imgInput = document.getElementById('image-upload'); const pdfInput = document.getElementById('pdf-upload'); const promptText = document.getElementById('upload-prompt-text'); const promptSubText = document.getElementById('upload-prompt-subtext'); if (fileType === 'image') { imgInput.classList.remove('hidden'); pdfInput.classList.add('hidden'); promptText.textContent = "📸 複数枚の写真を選択"; promptSubText.textContent = "いつものアルバムから選べます"; } else { imgInput.classList.add('hidden'); pdfInput.classList.remove('hidden'); promptText.textContent = "📄 PDFファイルを選択"; promptSubText.textContent = "端末内のPDFを選べます"; } imgInput.value = ''; pdfInput.value = ''; document.getElementById('file-name').innerHTML = ''; }
+        const compressImage = async (file, maxWidth = 1200) => { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target.result; img.onload = () => { let width = img.width, height = img.height; if (width > maxWidth || height > maxWidth) { if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } else { width = Math.round((width * maxWidth) / height); height = maxWidth; } } const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() })), 'image/jpeg', 0.8); }; img.onerror = reject; }; reader.onerror = reject; }); };
+        function handleFileSelect(e) { if(e.target.files.length > 0) { const fileNames = Array.from(e.target.files).map(f => f.name).join('<br>'); const typeIcon = e.target.id === 'image-upload' ? '📸' : '📄'; document.getElementById('file-name').innerHTML = `${typeIcon} ${e.target.files.length}個のファイルがセットされました<br><span class="text-gray-500 text-[11px] font-normal leading-tight block mt-1">${fileNames}</span>`; } else document.getElementById('file-name').innerHTML = ''; }
+        document.getElementById('image-upload').addEventListener('change', handleFileSelect); document.getElementById('pdf-upload').addEventListener('change', handleFileSelect);
+        document.getElementById('extract-btn').addEventListener('click', async function() {
+            const fileType = document.querySelector('input[name="file-type"]:checked').value; const activeInput = fileType === 'image' ? document.getElementById('image-upload') : document.getElementById('pdf-upload'); if(!activeInput.files.length) return alert("ファイルを選択してください！");
+            const L = document.getElementById('folder-large').value.trim(), M = document.getElementById('folder-medium').value.trim(), S = document.getElementById('folder-small').value.trim(); const mode = document.querySelector('input[name="scan-mode"]:checked').value;
+            const btn = document.getElementById('extract-btn'); btn.textContent = "⚙️ ファイルを準備中..."; btn.disabled = true; btn.classList.replace('bg-blue-600', 'bg-gray-400');
+            let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name)); let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = []; for (let i = 0; i < filesArray.length; i++) { if (mode === "workbook") qPerFile.push(1); else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); } }
             let combinedText = [], combinedQ = [];
             try {
                 for (let i = 0; i < filesArray.length; i++) {
-                    const file = filesArray[i];
-                    let fileToSend = file;
-
-                    if (file.type.startsWith('image/')) {
-                        extractBtn.textContent = `⚙️ 画像を圧縮中... (${i+1}/${filesArray.length}枚目)`;
-                        fileToSend = await compressImage(file);
-                    } else if (file.type === 'application/pdf') {
-                        if (file.size > 15 * 1024 * 1024) { 
-                            throw new Error(`PDFのサイズが大きすぎます (${file.name})。15MB以下のPDFを選択してください。`);
-                        }
-                    } else {
-                        throw new Error(`未対応のファイル形式です: ${file.name}`);
-                    }
-
-                    extractBtn.textContent = `⚙️ AIが解析中... (${i+1}/${filesArray.length})`;
-                    
+                    const file = filesArray[i]; let fileToSend = file;
+                    if (file.type.startsWith('image/')) { btn.textContent = `⚙️ 画像を圧縮中... (${i+1}/${filesArray.length}枚目)`; fileToSend = await compressImage(file); } else if (file.type === 'application/pdf') { if (file.size > 15 * 1024 * 1024) throw new Error(`PDFが大きすぎます。`); }
+                    btn.textContent = `⚙️ AIが解析中... (${i+1}/${filesArray.length})`;
                     const fd = new FormData(); fd.append("file", fileToSend); fd.append("mode", mode); fd.append("num_questions", qPerFile[i]);
-                    const res = await fetch("/api/analyze", { method: "POST", body: fd });
-                    if (!res.ok) throw new Error(`${i+1}個目の解析でエラーが発生しました`);
-                    
-                    const data = await res.json();
-                    if (data.extracted_text) combinedText.push(data.extracted_text);
-                    if (data.generated_questions) combinedQ = combinedQ.concat(data.generated_questions);
-                    else if (data.questions) combinedQ = combinedQ.concat(data.questions);
+                    const res = await fetch("/api/analyze", { method: "POST", body: fd }); if (!res.ok) throw new Error(`解析エラー`); const data = await res.json();
+                    if (data.extracted_text) combinedText.push(data.extracted_text); if (data.generated_questions) combinedQ = combinedQ.concat(data.generated_questions); else if (data.questions) combinedQ = combinedQ.concat(data.questions);
                 }
-                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ });
-                
-                activeInput.value = ''; fileNameDisplay.innerHTML = '';
-            } catch (error) { alert("失敗しました。\n詳細: " + error.message); } 
-            finally { extractBtn.textContent = "AIに送信して解析・保存スタート"; extractBtn.disabled = false; extractBtn.classList.replace('bg-gray-400', 'bg-blue-600'); }
+                await saveToFolder(L, M, S, { type: mode, extracted_text: combinedText.join("\n\n"), generated_questions: combinedQ }); activeInput.value = ''; document.getElementById('file-name').innerHTML = '';
+            } catch (error) { alert("失敗しました。\n詳細: " + error.message); } finally { btn.textContent = "AIに送信して解析・保存スタート"; btn.disabled = false; btn.classList.replace('bg-gray-400', 'bg-blue-600'); }
         });
+        document.getElementById('highlight-btn').addEventListener('click', function() { const sel = window.getSelection(); if (!sel.rangeCount || sel.toString().trim() === '') return alert("マーカーを引きたい文字をなぞってください。"); try { const span = document.createElement('span'); span.className = 'user-mark'; sel.getRangeAt(0).surroundContents(span); sel.removeAllRanges(); } catch(e){} });
 
-        document.getElementById('highlight-btn').addEventListener('click', function() {
-            const sel = window.getSelection();
-            if (!sel.rangeCount || sel.toString().trim() === '') return alert("マーカーを引きたい文字をなぞってください。");
-            try { const span = document.createElement('span'); span.className = 'user-mark'; sel.getRangeAt(0).surroundContents(span); sel.removeAllRanges(); } catch(e){}
-        });
-
-        // ==========================================
-        // 実践画面の様式切り替え
-        // ==========================================
+        // 実践画面フォーム切り替え
         function switchPracticeForm(formId) {
-            document.getElementById('form-yoshiki-2').classList.add('hidden');
-            document.getElementById('form-yoshiki-8').classList.add('hidden');
-            document.getElementById('form-kyufu-2').classList.add('hidden');
-            document.getElementById('form-kyufu-3').classList.add('hidden');
-            
-            document.getElementById('form-' + formId).classList.remove('hidden');
+            const formIds = ['yoshiki-2', 'yoshiki-3', 'yoshiki-4', 'yoshiki-5', 'yoshiki-6', 'yoshiki-7', 'yoshiki-8', 'yoshiki-9', 'yoshiki-10', 'yoshiki-11'];
+            formIds.forEach(id => {
+                const el = document.getElementById('form-' + id);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById('form-' + formId);
+            if (target) target.classList.remove('hidden');
         }
     </script>
 </body>
