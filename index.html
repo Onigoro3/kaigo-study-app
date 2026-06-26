@@ -88,10 +88,11 @@
                 
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-gray-700 mb-2">読み込む種類</label>
-                    <div class="flex space-x-4">
-                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked /> 教科書</label>
-                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="workbook" class="mr-2" /> 問題集</label>
-                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg"><input type="radio" name="scan-mode" value="practice" class="mr-2" /> 実技問題</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg flex-grow"><input type="radio" name="scan-mode" value="textbook" class="mr-2" checked /> 教科書</label>
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg flex-grow"><input type="radio" name="scan-mode" value="workbook" class="mr-2" /> 問題集</label>
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg flex-grow"><input type="radio" name="scan-mode" value="marubatsu" class="mr-2" /> 〇×問題</label>
+                        <label class="flex items-center cursor-pointer p-2 bg-gray-50 border rounded-lg flex-grow"><input type="radio" name="scan-mode" value="practice" class="mr-2" /> 実技問題</label>
                     </div>
                 </div>
 
@@ -200,13 +201,11 @@
 
         <div id="practice-tab" class="hidden fade-in h-[calc(100vh-8rem)]">
             <div class="flex h-full rounded-xl overflow-hidden shadow-lg border border-gray-300">
-                
                 <div class="w-1/3 bg-white flex flex-col border-r border-gray-300 relative">
                     <div class="p-4 bg-blue-50 border-b border-gray-200 flex justify-between items-center">
                         <h2 class="font-bold text-blue-800">📋 実践問題</h2>
                         <button onclick="renderPracticeList()" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 shadow-sm">一覧更新</button>
                     </div>
-                    
                     <div id="practice-problem-display" class="hidden flex-1 overflow-y-auto p-4 bg-white">
                         <button onclick="showPracticeList()" class="mb-4 text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 py-2 px-3 rounded font-bold shadow-sm flex items-center transition">
                             <span class="mr-1">←</span> 問題一覧に戻る
@@ -214,11 +213,8 @@
                         <h3 id="practice-problem-title" class="font-bold text-base text-indigo-900 mb-3 border-b-2 border-indigo-200 pb-2"></h3>
                         <div id="practice-problem-content" class="text-sm text-gray-800 leading-loose space-y-4"></div>
                     </div>
-
                     <div class="flex-1 overflow-y-auto p-4 space-y-3" id="practice-quiz-list">
-                        <div class="text-center text-gray-500 text-sm mt-10">
-                            「追加」タブで「実技問題」として<br>スキャンしたデータがここに表示されます。
-                        </div>
+                        <div class="text-center text-gray-500 text-sm mt-10">「追加」タブで「実技問題」として<br>スキャンしたデータがここに表示されます。</div>
                     </div>
                 </div>
 
@@ -558,6 +554,32 @@
             </div>
         </div>
 
+        <div id="marubatsu-tab" class="hidden fade-in h-[calc(100vh-8rem)]">
+            <div class="flex h-full rounded-xl overflow-hidden shadow-lg border border-gray-300">
+                <div class="w-1/3 bg-white flex flex-col border-r border-gray-300 relative" id="marubatsu-quiz-list-container">
+                    <div class="p-4 bg-blue-50 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="font-bold text-blue-800">⭕ 〇×問題リスト</h2>
+                        <button onclick="renderMarubatsuList()" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 shadow-sm">一覧更新</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="marubatsu-quiz-list">
+                        <div class="text-center text-gray-500 text-sm mt-10">「追加」タブで「〇×問題」として<br>スキャンしたデータがここに表示されます。</div>
+                    </div>
+                </div>
+                <div class="w-2/3 bg-gray-50 flex flex-col relative hidden md:flex" id="marubatsu-play-area">
+                    <div id="marubatsu-header" class="p-4 bg-gray-200 border-b border-gray-300 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <button onclick="showMarubatsuList()" class="md:hidden mr-3 text-xs bg-gray-300 hover:bg-gray-400 py-1 px-2 rounded font-bold">← 戻る</button>
+                            <h2 class="font-bold text-gray-800 truncate max-w-[200px]" id="marubatsu-title">問題を選択してください</h2>
+                        </div>
+                        <span id="marubatsu-progress" class="text-sm font-bold text-blue-800 bg-blue-100 px-3 py-1 rounded-full"></span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col justify-start items-center" id="marubatsu-content">
+                        <div class="text-center text-gray-500 mt-20">👈 左のリストから問題を選んで挑戦しましょう！</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
@@ -567,6 +589,9 @@
             </button>
             <button onclick="switchTab('add-data')" id="nav-add-data" class="flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
                 <span class="text-2xl mb-1">📸</span><span class="text-[10px] font-bold">追加</span>
+            </button>
+            <button onclick="switchTab('marubatsu')" id="nav-marubatsu" class="flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
+                <span class="text-2xl mb-1">⭕</span><span class="text-[10px] font-bold">〇×問題</span>
             </button>
             <button onclick="switchTab('practice')" id="nav-practice" class="hidden md:flex flex-col items-center justify-center w-full h-full text-gray-400 transition hover:text-gray-600">
                 <span class="text-2xl mb-1">💻</span><span class="text-[10px] font-bold">PC実践</span>
@@ -628,10 +653,12 @@
             document.getElementById('add-data-tab').classList.add('hidden');
             document.getElementById('study-page').classList.add('hidden');
             document.getElementById('practice-tab').classList.add('hidden'); 
+            document.getElementById('marubatsu-tab').classList.add('hidden'); 
 
             document.getElementById('nav-bookshelf').classList.replace('text-blue-600', 'text-gray-400');
             document.getElementById('nav-add-data').classList.replace('text-blue-600', 'text-gray-400');
             document.getElementById('nav-practice').classList.replace('text-blue-600', 'text-gray-400'); 
+            document.getElementById('nav-marubatsu').classList.replace('text-blue-600', 'text-gray-400'); 
 
             if (tabName === 'bookshelf') {
                 document.getElementById('bookshelf-tab').classList.remove('hidden');
@@ -646,6 +673,11 @@
                 document.getElementById('nav-practice').classList.replace('text-gray-400', 'text-blue-600');
                 showPracticeList(); 
                 renderPracticeList(); 
+            } else if (tabName === 'marubatsu') {
+                document.getElementById('marubatsu-tab').classList.remove('hidden');
+                document.getElementById('nav-marubatsu').classList.replace('text-gray-400', 'text-blue-600');
+                renderMarubatsuList();
+                showMarubatsuList();
             }
             window.scrollTo(0, 0);
         }
@@ -814,6 +846,7 @@
             const records = studyData[L][M][S]; 
             let allTexts = [], allQuestions = []; 
             records.forEach(r => { 
+                // もし〇×問題や実技問題なら通常の学習画面では見づらいので警告するのもありですが、一旦そのまま表示します
                 if (r.extracted_text) allTexts.push(r.extracted_text); 
                 if (r.generated_questions) allQuestions = allQuestions.concat(r.generated_questions); 
                 if (r.questions) allQuestions = allQuestions.concat(r.questions); 
@@ -1107,7 +1140,7 @@
             let filesArray = Array.from(activeInput.files).sort((a, b) => a.name.localeCompare(b.name)); 
             let totalQ = parseInt(document.getElementById('question-count').value), qPerFile = []; 
             for (let i = 0; i < filesArray.length; i++) { 
-                if (mode === "workbook" || mode === "practice") qPerFile.push(1); 
+                if (mode === "workbook" || mode === "practice" || mode === "marubatsu") qPerFile.push(1); 
                 else { let q = Math.floor(totalQ / filesArray.length); if (i < (totalQ % filesArray.length)) q += 1; qPerFile.push(q); } 
             }
             
@@ -1191,7 +1224,6 @@
                     }
                 }
             }
-            
             if (!hasPracticeData) {
                 listContainer.innerHTML = `<div class="text-center text-gray-500 text-sm mt-10">「追加」タブから「実技問題」を<br>スキャンして保存してください。</div>`;
             }
@@ -1201,11 +1233,9 @@
             const item = studyData[L][M][S][index];
             document.getElementById('practice-quiz-list').classList.add('hidden');
             document.getElementById('practice-problem-display').classList.remove('hidden');
-            
             document.getElementById('practice-problem-title').textContent = `📄 ${S}`;
             document.getElementById('practice-problem-content').innerHTML = item.extracted_text || '<p class="text-red-500">問題文データを読み取れませんでした。</p>';
             
-            // AIが判別した様式に合わせて右側のフォームを自動で切り替える
             if (item.target_form) {
                 const selector = document.getElementById('form-selector');
                 if (Array.from(selector.options).some(opt => opt.value === item.target_form)) {
@@ -1218,6 +1248,128 @@
         function showPracticeList() {
             document.getElementById('practice-problem-display').classList.add('hidden');
             document.getElementById('practice-quiz-list').classList.remove('hidden');
+        }
+
+        // --- 〇×問題用の処理 ---
+        let currentMarubatsuData = [];
+        let currentMarubatsuIndex = 0;
+        let marubatsuCorrectCount = 0;
+
+        function renderMarubatsuList() {
+            const listContainer = document.getElementById('marubatsu-quiz-list');
+            listContainer.innerHTML = '';
+            let hasMarubatsuData = false;
+            
+            for (const L in studyData) {
+                for (const M in studyData[L]) {
+                    for (const S in studyData[L][M]) {
+                        studyData[L][M][S].forEach((item, index) => {
+                            if (item.type === 'marubatsu') {
+                                hasMarubatsuData = true;
+                                const qCount = (item.generated_questions || []).length;
+                                const btnHtml = `
+                                    <div onclick="selectMarubatsuProblem('${L}', '${M}', '${S}', ${index})" class="p-4 bg-white hover:bg-blue-50 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition group">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <p class="font-bold text-sm text-blue-900 group-hover:text-blue-600 transition">📄 ${S}</p>
+                                            <span class="text-[10px] bg-red-100 text-red-800 font-bold py-1 px-2 rounded border border-red-200">全 ${qCount} 問</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 truncate mt-1">📁 ${L} > ${M}</p>
+                                    </div>
+                                `;
+                                listContainer.insertAdjacentHTML('beforeend', btnHtml);
+                            }
+                        });
+                    }
+                }
+            }
+            if (!hasMarubatsuData) {
+                listContainer.innerHTML = `<div class="text-center text-gray-500 text-sm mt-10">「追加」タブから「〇×問題」を<br>スキャンして保存してください。</div>`;
+            }
+        }
+
+        function selectMarubatsuProblem(L, M, S, index) {
+            const item = studyData[L][M][S][index];
+            currentMarubatsuData = item.generated_questions || [];
+            currentMarubatsuIndex = 0;
+            marubatsuCorrectCount = 0;
+
+            document.getElementById('marubatsu-title').textContent = `📄 ${S}`;
+            document.getElementById('marubatsu-quiz-list-container').classList.add('hidden', 'md:flex');
+            document.getElementById('marubatsu-play-area').classList.remove('hidden');
+            document.getElementById('marubatsu-play-area').classList.add('flex');
+
+            renderMarubatsuQuestion();
+        }
+
+        function showMarubatsuList() {
+            document.getElementById('marubatsu-quiz-list-container').classList.remove('hidden', 'md:flex');
+            document.getElementById('marubatsu-quiz-list-container').classList.add('flex');
+            document.getElementById('marubatsu-play-area').classList.add('hidden');
+            document.getElementById('marubatsu-play-area').classList.remove('flex');
+        }
+
+        function renderMarubatsuQuestion() {
+            const container = document.getElementById('marubatsu-content');
+            if (!currentMarubatsuData || currentMarubatsuData.length === 0) {
+                container.innerHTML = `<div class="text-red-500 font-bold">問題データがありません。</div>`;
+                return;
+            }
+
+            if (currentMarubatsuIndex >= currentMarubatsuData.length) {
+                container.innerHTML = `
+                    <div class="text-center p-8 bg-white rounded-xl shadow-lg border-t-4 border-green-500 w-full max-w-lg mt-10 fade-in">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">🎉 お疲れ様でした！</h2>
+                        <p class="text-2xl font-bold text-blue-600 mb-6">${currentMarubatsuData.length}問中 <span class="text-4xl text-red-500">${marubatsuCorrectCount}</span> 問正解！</p>
+                        <button onclick="showMarubatsuList()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-md transition">リストに戻る</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const q = currentMarubatsuData[currentMarubatsuIndex];
+            document.getElementById('marubatsu-progress').textContent = `第 ${currentMarubatsuIndex + 1} 問 / 全 ${currentMarubatsuData.length} 問`;
+            
+            container.innerHTML = `
+                <div class="w-full max-w-3xl bg-white p-6 md:p-10 rounded-2xl shadow border border-gray-200 mt-4 fade-in">
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800 leading-loose mb-10 border-b pb-4">Q. ${q.question_text}</h3>
+                    
+                    <div class="flex justify-center space-x-8 md:space-x-16" id="marubatsu-buttons">
+                        <button onclick="answerMarubatsu('〇')" class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-red-500 text-red-500 text-5xl md:text-6xl font-bold hover:bg-red-50 hover:scale-105 transition transform shadow">〇</button>
+                        <button onclick="answerMarubatsu('×')" class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-blue-600 text-blue-600 text-5xl md:text-6xl font-bold hover:bg-blue-50 hover:scale-105 transition transform shadow">×</button>
+                    </div>
+
+                    <div id="marubatsu-result" class="hidden mt-8"></div>
+                </div>
+            `;
+        }
+
+        function answerMarubatsu(userAns) {
+            const q = currentMarubatsuData[currentMarubatsuIndex];
+            const isCorrect = (userAns === q.answer);
+            if (isCorrect) marubatsuCorrectCount++;
+
+            const btns = document.querySelectorAll('#marubatsu-buttons button');
+            btns.forEach(b => { b.disabled = true; b.classList.add('opacity-50', 'cursor-not-allowed'); });
+
+            const resultDiv = document.getElementById('marubatsu-result');
+            resultDiv.classList.remove('hidden');
+            
+            const resultBadge = isCorrect 
+                ? `<span class="bg-red-100 text-red-700 border border-red-500 px-4 py-1 rounded-full text-sm md:text-base font-bold">💮 正解！</span>`
+                : `<span class="bg-blue-100 text-blue-800 border border-blue-600 px-4 py-1 rounded-full text-sm md:text-base font-bold">💧 残念... (正解は ${q.answer})</span>`;
+
+            resultDiv.innerHTML = `
+                <div class="border-t-2 border-dashed border-gray-300 pt-6 mt-6 fade-in">
+                    <div class="mb-4">${resultBadge}</div>
+                    <div class="bg-gray-50 p-4 md:p-6 rounded-lg border border-gray-200">
+                        <h4 class="font-bold text-gray-700 border-b pb-2 mb-3 text-sm">📝 解説</h4>
+                        <p class="text-sm md:text-base text-gray-800 leading-relaxed whitespace-pre-wrap">${q.explanation}</p>
+                    </div>
+                    <div class="mt-6 flex justify-center">
+                        <button onclick="currentMarubatsuIndex++; renderMarubatsuQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow transition transform hover:-translate-y-1 w-full md:w-auto text-sm md:text-base">次の問題へ ➔</button>
+                    </div>
+                </div>
+            `;
         }
     </script>
 </body>

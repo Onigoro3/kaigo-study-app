@@ -110,6 +110,17 @@ async def analyze_image(
             判別できない場合や指定がない場合は null にしてください。
             generated_questions は空のリスト [] とし、typeは "practice" としてください。
             """
+        elif mode == "marubatsu":
+            prompt = f"""
+            画像は「〇×問題（正誤問題）」です。
+            画像内に含まれるすべての問題文を抽出し、それぞれが正しい（〇）か、間違っている（×）かを判定し、その理由（解説）を作成してください。
+            抽出した問題は generated_questions に格納してください。
+            ・question_text: 問題文
+            ・options: ["〇", "×"] （必ずこの2つの完全一致リスト）
+            ・answer: "〇" または "×"
+            ・explanation: なぜ〇なのか、あるいはなぜ×なのかの詳しい解説
+            ※extracted_text は空文字（""）にし、type は "marubatsu" としてください。
+            """
         else:
             prompt = f"""
             添付された教科書の画像を解析し、以下の指示に従って指定のデータ構造に格納してください。
